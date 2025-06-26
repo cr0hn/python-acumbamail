@@ -2,6 +2,7 @@
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PyPI](https://img.shields.io/pypi/v/acumbamail)](https://pypi.org/project/acumbamail/)
 
 A modern, feature-rich Python SDK for the [Acumbamail](https://acumbamail.com/?refered=243965) API. This library provides both synchronous and asynchronous clients for managing email campaigns, mailing lists, subscribers, and analytics.
 
