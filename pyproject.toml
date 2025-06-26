@@ -1,0 +1,18 @@
+[project]
+name = "acumbamail"
+version = "0.1.0"
+description = "Acumamail SDK client for Python"
+authors = [
+    {name = "Daniel Garcia (cr0hn)"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx (>=0.28.1,<0.29.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,577 @@
+{
+	"info": {
+		"_postman_id": "e5a811d8-dbec-487e-a31f-5e536e77ce40",
+		"name": "Acumbamail",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "5936722"
+	},
+	"item": [
+		{
+			"name": "Campaings",
+			"item": [
+				{
+					"name": "getCampaignBasicInformation",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaignBasicInformation/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaignBasicInformation",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaignClicks",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaignClicks/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaignClicks",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaignInformationByISP",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaignInformationByISP/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaignInformationByISP",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaignLinks",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaignLinks/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaignLinks",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaignOpeners",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaignOpeners/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaignOpeners",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaignOpenersByCountries",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaignOpenersByBrowser/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaignOpenersByBrowser",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaignOpenersByOs",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaignOpenersByOs/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaignOpenersByOs",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaigns",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\",\n    \"complete_json\": 0\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaigns/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaigns",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaignSoftBounces",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaignSoftBounces/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaignSoftBounces",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaignTotalInformation",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaignTotalInformation/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaignTotalInformation",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getStatsByDate",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"list_id\": \"{{list_id}}\",\n    \"date_from\": \"2025-02-28\",\n    \"date_to\": \"2025-04-28\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getStatsByDate/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getStatsByDate",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getTemplates",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getTemplates/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getTemplates",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "subscribers",
+			"item": [
+				{
+					"name": "getLists",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getLists/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getLists",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getListFields",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"list_id\": \"{{list_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getListFields/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getListFields",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getListSegments",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"list_id\": \"{{list_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getListFields/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getListFields",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getListStats",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"list_id\": \"{{list_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getListStats/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getListStats",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getListSubsStats",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"list_id\": \"{{list_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getListStats/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getListStats",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getMergeFields",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"list_id\": \"{{list_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getMergeFields/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getMergeFields",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getSubscribers",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"list_id\": \"{{list_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getSubscribers/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getSubscribers",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "token",
+			"value": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+			"type": "string"
+		},
+		{
+			"key": "basepath",
+			"value": "https://acumbamail.com/api/1/",
+			"type": "string"
+		},
+		{
+			"key": "campaign_id",
+			"value": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+			"type": "string"
+		},
+		{
+			"key": "list_id",
+			"value": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+			"type": "string"
+		}
+	]
+}
