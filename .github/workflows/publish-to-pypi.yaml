@@ -36,17 +36,3 @@ jobs:
         POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_API_TOKEN }}
       run: poetry publish
       
-    - name: Create Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref_name }}
-        body: |
-          Release ${{ github.ref_name }}
-          
-          Changes in this release:
-          - Automated release from tag ${{ github.ref_name }}
-        draft: false
-        prerelease: false
