@@ -1,6 +1,6 @@
 [project]
 name = "acumbamail"
-version = "0.1.0"
+version = "0.1.1"
 description = "Acumamail SDK client for Python"
 authors = [
     {name = "Daniel Garcia (cr0hn)"}

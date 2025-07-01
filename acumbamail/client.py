@@ -563,7 +563,6 @@ class AcumbamailClient:
         from_email: str = None,
         scheduled_at: datetime = None,
         tracking_enabled: bool = True,
-        pre_header: Optional[str] = None
     ) -> Campaign:
         """
         Create a new email campaign in your Acumbamail account.
@@ -592,9 +591,6 @@ class AcumbamailClient:
                 sending. If None, the campaign will be sent immediately.
             tracking_enabled (bool, optional): Whether to enable click and open
                 tracking for the campaign. Defaults to True for better analytics.
-            pre_header (str, optional): Preview text that appears in email clients
-                after the subject line. This can improve open rates by providing
-                additional context.
             
         Returns:
             Campaign: A Campaign object representing the newly created campaign,
@@ -664,17 +660,19 @@ class AcumbamailClient:
         if not list_ids:
             raise AcumbamailValidationError("At least one list_id must be specified")
             
+        if "*|UNSUBSCRIBE_URL|*" not in content:
+            raise AcumbamailValidationError("Campaign content must contain the unsubscribe URL. You have to use the placeholder *|UNSUBSCRIBE_URL|*")
+
         campaign = Campaign(
             id=None,
             name=name.strip(),
             subject=subject.strip(),
-            content=self._wrap_content_with_unsubscribe(content.strip(), pre_header),
+            content=content,
             from_name=from_name or self.default_sender_name,
             from_email=from_email or self.default_sender_email,
             list_ids=list_ids,
             scheduled_at=scheduled_at,
-            tracking_enabled=tracking_enabled,
-            pre_header=pre_header
+            tracking_enabled=tracking_enabled
         )
         
         response = self._call_api("createCampaign", campaign.to_api_payload())
@@ -789,32 +787,6 @@ class AcumbamailClient:
         
         response = self._call_api("sendOne", data)
         return int(response)
-
-    def _wrap_content_with_unsubscribe(self, content: str, pre_header: Optional[str] = None) -> str:
-        """
-        Wrap email content with unsubscribe footer.
-        
-        Args:
-            content (str): Original email content
-            pre_header (str, optional): Pre-header text for email clients
-        Returns:
-            str: Content wrapped with unsubscribe footer
-        """
-        return f"""
-        <body>
-            <!-- Hidden preheader -->
-            <div style="display:none; font-size:1px; color:#ffffff; line-height:1px; max-height:0px; max-width:0px; opacity:0; overflow:hidden;">
-                {pre_header}
-            </div>
-
-            {content}
-            <div style="margin-top: 40px; width: 100%; text-align: center; font-size: 60%; color: #dedede;">
-                <p>Aunque te echaremos de menos, si no quieres recibir más correos puedes <a style="text-color: #b1b1b1; font-size: 70%;" href="*|UNSUBSCRIBE_URL|*">darte de baja aquí.</a></p>
-                <p>Si te das de baja, no recibirás los emails, las novedades y las ofertas de que doy de vez en cuando. </p>
-                <p>Además, no podrás leer el email en ningún otro sitio. Email que no recibas, email que te pierdes.</p>
-            </div>
-        </body>
-        """
 
     def get_campaign_basic_information(self, campaign_id: int) -> Dict[str, Any]:
         """
