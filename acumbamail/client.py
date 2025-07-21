@@ -13,6 +13,8 @@ from datetime import datetime
 
 import httpx
 
+from .utils import manage_api_response_id
+
 from .models import (
     CampaignTotalInformation,
     MailList, 
@@ -318,7 +320,7 @@ class AcumbamailClient:
             data["country"] = self.sender_country
 
         response = self._call_api("createList", data)
-        list_id = int(response)
+        list_id = manage_api_response_id(response)
         
         return MailList(
             id=list_id,
@@ -679,7 +681,7 @@ class AcumbamailClient:
         )
         
         response = self._call_api("createCampaign", campaign.to_api_payload())
-        campaign.id = int(response)
+        campaign.id = manage_api_response_id(response)
         
         return campaign
 
@@ -789,7 +791,8 @@ class AcumbamailClient:
         }
         
         response = self._call_api("sendOne", data)
-        return int(response)
+        
+        return manage_api_response_id(response)
 
     def get_campaign_basic_information(self, campaign_id: int) -> Dict[str, Any]:
         """
@@ -1200,7 +1203,7 @@ class AcumbamailClient:
         }
         
         response = self._call_api("createTemplate", data)
-        template_id = int(response)
+        template_id = manage_api_response_id(response)
         
         return Template(
             id=template_id,
