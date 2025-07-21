@@ -25,6 +25,7 @@ A modern, feature-rich Python SDK for the [Acumbamail](https://acumbamail.com/?r
   - [Subscribers](#subscribers)
   - [Campaigns](#campaigns)
   - [Single Emails](#single-emails)
+  - [Templates](#templates)
 - [Asynchronous Usage](#asynchronous-usage)
 - [Analytics and Statistics](#analytics-and-statistics)
   - [Campaign Analytics](#campaign-analytics)
@@ -44,6 +45,8 @@ A modern, feature-rich Python SDK for the [Acumbamail](https://acumbamail.com/?r
     - [List Management](#list-management)
     - [Subscriber Management](#subscriber-management)
     - [Campaign Management](#campaign-management)
+      - [Template Management](#template-management)
+      - [Campaign Parameters](#campaign-parameters)
     - [Analytics](#analytics)
 - [Error Handling](#error-handling)
 - [Examples](#examples)
@@ -219,6 +222,19 @@ campaign = client.create_campaign(
     pre_header="Stay updated with our latest news"
 )
 
+# Create a campaign with custom tracking domain
+campaign_with_tracking = client.create_campaign(
+    name="Branded Newsletter",
+    subject="Special offer just for you!",
+    content="""
+    <h1>Special Offer</h1>
+    <p>Check out our latest deals:</p>
+    <a href="https://example.com/offer">View Offer</a>
+    """,
+    list_ids=[mailing_list.id],
+    tracking_domain="links.midominio.com"  # Custom tracking domain
+)
+
 # Schedule a campaign
 from datetime import datetime, timedelta
 scheduled_time = datetime.now() + timedelta(days=1)
@@ -241,6 +257,23 @@ email_id = client.send_single_email(
     content="<h1>Thank you for your order!</h1><p>Order #12345</p>",
     category="order_confirmation"
 )
+```
+
+### Templates
+
+```python
+# Create an email template
+template = client.create_template(
+    template_name="Welcome Template",
+    html_content="<h1>Welcome!</h1><p>Thank you for joining our community.</p>",
+    subject="Welcome to our community!",
+    custom_category="onboarding"
+)
+
+# Get all templates
+templates = client.get_templates()
+for template in templates:
+    print(f"Template: {template.name} - ID: {template.id}")
 ```
 
 ## Asynchronous Usage
@@ -266,6 +299,15 @@ async def main():
             subject="Hello from async!",
             content="<p>This was sent asynchronously</p>",
             list_ids=[lists[0].id]
+        )
+        
+        # Create campaign with custom tracking domain
+        branded_campaign = await client.create_campaign(
+            name="Branded Async Campaign",
+            subject="Special async offer!",
+            content="<p>Check out our async deals!</p>",
+            list_ids=[lists[0].id],
+            tracking_domain="links.midominio.com"  # Custom tracking domain
         )
         
         # Get campaign statistics
@@ -539,6 +581,53 @@ class AsyncAcumbamailClient:
 - `create_campaign(name, subject, content, list_ids, ...)` - Create a campaign
 - `get_campaigns(complete_json)` - Get all campaigns
 - `send_single_email(to_email, subject, content, ...)` - Send single email
+- `create_template(template_name, html_content, subject, custom_category)` - Create email template
+
+##### Template Management
+
+The SDK provides methods to create and manage email templates:
+
+- `get_templates()` - Retrieve all available email templates
+- `create_template(template_name, html_content, subject, custom_category)` - Create a new email template
+
+**Template Parameters:**
+- `template_name` (str): Name of the template for internal organization
+- `html_content` (str): HTML content of the template (can include merge tags)
+- `subject` (str): Default subject line for emails using this template
+- `custom_category` (str, optional): Category to organize templates
+
+**Example:**
+```python
+# Create a welcome template
+template = client.create_template(
+    template_name="Welcome Email",
+    html_content="<h1>Welcome!</h1><p>Thank you for joining.</p>",
+    subject="Welcome to our community!",
+    custom_category="onboarding"
+)
+
+# Get all templates
+templates = client.get_templates()
+for template in templates:
+    print(f"Template: {template.name} - ID: {template.id}")
+```
+
+##### Campaign Parameters
+
+The `create_campaign` method supports several parameters for customization:
+
+- `name` (str): Campaign name for internal organization
+- `subject` (str): Email subject line
+- `content` (str): HTML content of the email (must include `*|UNSUBSCRIBE_URL|*`)
+- `list_ids` (List[int]): Target mailing list IDs
+- `from_name` (str, optional): Sender name (uses default if not specified)
+- `from_email` (str, optional): Sender email (uses default if not specified)
+- `scheduled_at` (datetime, optional): When to schedule the campaign
+- `tracking_enabled` (bool, optional): Enable click/open tracking (default: True)
+- `tracking_domain` (str, optional): Custom domain for tracking URLs (e.g., "links.midominio.com")
+- `pre_header` (str, optional): Preview text shown in email clients
+
+**Tracking Domain**: The `tracking_domain` parameter allows you to customize the domain used for tracking URLs in your emails. Instead of using Acumbamail's default tracking domain, you can specify your own domain (e.g., "links.midominio.com") to maintain brand consistency and improve deliverability.
 
 #### Analytics
 

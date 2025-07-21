@@ -119,6 +119,7 @@ class Campaign:
         tracking_enabled (bool): Whether to track opens/clicks
         pre_header (Optional[str]): Preview text shown in email clients
         stats (Dict[str, Any]): Campaign statistics
+        tracking_domain (Optional[str]): The domain to use for tracking
     """
     id: Optional[int]
     name: str
@@ -132,6 +133,7 @@ class Campaign:
     tracking_enabled: bool = True
     pre_header: Optional[str] = None
     stats: Dict[str, Any] = None
+    tracking_domain: Optional[str] = None
 
     def to_api_payload(self) -> Dict[str, Any]:
         """
@@ -168,6 +170,9 @@ class Campaign:
         if self.pre_header:
             payload["pre_header"] = self.pre_header
 
+        if self.tracking_domain:
+            payload["tracking_domain"] = self.tracking_domain
+
         return payload
 
     @classmethod
@@ -193,7 +198,8 @@ class Campaign:
             scheduled_at=datetime.fromisoformat(data['scheduled_at']) if 'scheduled_at' in data else None,
             tracking_enabled=bool(data.get('tracking_urls', True)),
             pre_header=data.get('pre_header'),
-            stats=data.get('stats', {})
+            stats=data.get('stats', {}),
+            tracking_domain=data.get('tracking_domain')
         )
 
 

@@ -563,6 +563,7 @@ class AcumbamailClient:
         from_email: str = None,
         scheduled_at: datetime = None,
         tracking_enabled: bool = True,
+        tracking_domain: str = None,
     ) -> Campaign:
         """
         Create a new email campaign in your Acumbamail account.
@@ -591,7 +592,8 @@ class AcumbamailClient:
                 sending. If None, the campaign will be sent immediately.
             tracking_enabled (bool, optional): Whether to enable click and open
                 tracking for the campaign. Defaults to True for better analytics.
-            
+            tracking_domain (str, optional): The domain to use for tracking. If not specified,
+                uses the default tracking domain from the account settings.
         Returns:
             Campaign: A Campaign object representing the newly created campaign,
                 containing the campaign ID and all configuration details.
@@ -672,7 +674,8 @@ class AcumbamailClient:
             from_email=from_email or self.default_sender_email,
             list_ids=list_ids,
             scheduled_at=scheduled_at,
-            tracking_enabled=tracking_enabled
+            tracking_enabled=tracking_enabled,
+            tracking_domain=tracking_domain
         )
         
         response = self._call_api("createCampaign", campaign.to_api_payload())
@@ -1115,6 +1118,95 @@ class AcumbamailClient:
         """
         response = self._call_api("getTemplates")
         return [Template.from_api(data) for data in response]
+
+    def create_template(
+        self,
+        template_name: str,
+        html_content: str,
+        subject: str,
+        custom_category: str = ""
+    ) -> Template:
+        """
+        Create a new email template.
+        
+        This method creates a new email template that can be reused for campaigns.
+        Templates provide a consistent structure and can include merge tags for
+        personalization.
+        
+        Args:
+            template_name (str): The name of the template for internal organization.
+                This should be descriptive and help you identify the template's purpose.
+            html_content (str): The HTML content of the template. This should be valid
+                HTML and can include merge tags for personalization (e.g., *|FNAME|*,
+                *|LNAME|*, *|UNSUBSCRIBE_URL|*).
+            subject (str): The default subject line for emails using this template.
+                This can be overridden when creating campaigns.
+            custom_category (str, optional): A custom category to organize templates.
+                This helps with template management and organization.
+            
+        Returns:
+            Template: A Template object representing the newly created template,
+                containing the template ID and all configuration details.
+            
+        Raises:
+            AcumbamailValidationError: If required fields are missing or invalid
+            AcumbamailAPIError: If the API request fails
+            AcumbamailError: For other errors during the request
+            
+        Example:
+            >>> # Create a basic welcome template
+            >>> template = client.create_template(
+            ...     template_name="Welcome Email",
+            ...     html_content="<h1>Welcome!</h1><p>Thank you for joining.</p>",
+            ...     subject="Welcome to our community!"
+            ... )
+            >>> print(f"Created template with ID: {template.id}")
+            
+            >>> # Create a template with custom category
+            >>> newsletter_template = client.create_template(
+            ...     template_name="Monthly Newsletter",
+            ...     html_content="<h1>Newsletter</h1><p>Monthly updates</p>",
+            ...     subject="Your monthly update is here!",
+            ...     custom_category="newsletter"
+            ... )
+            >>> print(f"Newsletter template created: {newsletter_template.name}")
+        
+        Note:
+            - The HTML content should include the unsubscribe URL placeholder
+              (*|UNSUBSCRIBE_URL|*) to comply with email marketing regulations.
+            - Templates can include merge tags for personalization, such as
+              *|FNAME|*, *|LNAME|*, *|EMAIL|*, etc.
+            - The subject line can be overridden when creating campaigns that
+              use this template.
+            - Custom categories help organize templates for easier management.
+        """
+        if not template_name or not template_name.strip():
+            raise AcumbamailValidationError("Template name cannot be empty")
+            
+        if not html_content or not html_content.strip():
+            raise AcumbamailValidationError("HTML content cannot be empty")
+            
+        if not subject or not subject.strip():
+            raise AcumbamailValidationError("Subject cannot be empty")
+            
+        if "*|UNSUBSCRIBE_URL|*" not in html_content:
+            raise AcumbamailValidationError("Template content must contain the unsubscribe URL. You have to use the placeholder *|UNSUBSCRIBE_URL|*")
+
+        data = {
+            "template_name": template_name.strip(),
+            "html_content": html_content.strip(),
+            "subject": subject.strip(),
+            "custom_category": custom_category.strip() if custom_category else ""
+        }
+        
+        response = self._call_api("createTemplate", data)
+        template_id = int(response)
+        
+        return Template(
+            id=template_id,
+            name=template_name.strip(),
+            content=html_content.strip()
+        )
 
     def get_list_fields(self, list_id: int) -> List[Dict[str, Any]]:
         """
