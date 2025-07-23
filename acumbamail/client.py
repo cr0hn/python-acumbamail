@@ -566,6 +566,7 @@ class AcumbamailClient:
         scheduled_at: datetime = None,
         tracking_enabled: bool = True,
         tracking_domain: str = None,
+        https: bool = True,
     ) -> Campaign:
         """
         Create a new email campaign in your Acumbamail account.
@@ -596,6 +597,7 @@ class AcumbamailClient:
                 tracking for the campaign. Defaults to True for better analytics.
             tracking_domain (str, optional): The domain to use for tracking. If not specified,
                 uses the default tracking domain from the account settings.
+            https (bool, optional): Whether to use HTTPS for tracking. Defaults to True.
         Returns:
             Campaign: A Campaign object representing the newly created campaign,
                 containing the campaign ID and all configuration details.
@@ -677,7 +679,8 @@ class AcumbamailClient:
             list_ids=list_ids,
             scheduled_at=scheduled_at,
             tracking_enabled=tracking_enabled,
-            tracking_domain=tracking_domain
+            tracking_domain=tracking_domain,
+            https=https
         )
         
         response = self._call_api("createCampaign", campaign.to_api_payload())

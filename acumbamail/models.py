@@ -134,6 +134,7 @@ class Campaign:
     pre_header: Optional[str] = None
     stats: Dict[str, Any] = None
     tracking_domain: Optional[str] = None
+    https: Optional[bool] = True
 
     def to_api_payload(self) -> Dict[str, Any]:
         """
@@ -172,6 +173,9 @@ class Campaign:
 
         if self.tracking_domain:
             payload["tracking_domain"] = self.tracking_domain
+
+        if self.https:
+            payload["https"] = 1
 
         return payload
 
