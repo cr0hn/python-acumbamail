@@ -7,25 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- Initial release of Inspecta
-- OpenAPI/Swagger specification import
-- JWT token analysis
-- HTML report generation
-- Plugin-based architecture
-- Progress tracking
-- Configurable storage backends
+## [2026-05-18]
 
 ### Changed
 
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
+- Migrado el sistema de gestión de dependencias de Poetry a uv
+- Versión mínima de Python elevada de 3.11 a 3.13
+- Cambiado build backend de `poetry-core` a `hatchling`
+- Eliminado `poetry.lock`, generado `uv.lock`
 
 ## [0.1.0] - 2024-03-21
 
