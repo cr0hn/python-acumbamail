@@ -208,6 +208,14 @@ class TestExportYaml:
         assert step["template_id"] == 9999
         assert step["preheader"] == "preview"
 
+    def test_description_omitted_when_none(self):
+        trigger = make_node(100, "Trigger", workflow_list=1138335,
+                            trigger_reason={"reason_index": 0, "config": {}})
+        wf = Automation(id=1, name="test", description=None, active=False, booting=False,
+                        entry_point=trigger)
+        result = export_yaml(wf)
+        assert "description" not in result
+
     def test_exports_condition_as_on_match_on_no_match(self):
         cond_true = make_node(301, "Condition", evaluation=True)
         cond_false = make_node(302, "Condition", evaluation=False)

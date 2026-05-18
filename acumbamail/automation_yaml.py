@@ -18,6 +18,9 @@ _WAIT_UNIT_MAP = {
     "days": 2,
 }
 
+_INV_TRIGGER_EVENT_MAP: dict[int, str] = {v: k for k, v in _TRIGGER_EVENT_MAP.items()}
+_INV_WAIT_UNIT_MAP: dict[int, str] = {v: k for k, v in _WAIT_UNIT_MAP.items()}
+
 
 def load_yaml(path: str) -> dict:
     with open(path) as f:
@@ -169,20 +172,21 @@ def _deploy_step(workflow_id: int, source_id: str, step: dict, client: "Automati
 
 
 def export_yaml(workflow: "Automation") -> dict:
+    if workflow.entry_point is None:
+        raise ValueError(f"Workflow '{workflow.name}' has no entry_point — cannot export")
     result: dict = {"name": workflow.name}
     if workflow.description:
         result["description"] = workflow.description
 
-    if workflow.entry_point:
-        trigger = workflow.entry_point
-        ev_inv = {v: k for k, v in _TRIGGER_EVENT_MAP.items()}
-        reason = trigger.extra.get("trigger_reason") or {}
-        result["trigger"] = {
-            "list_id": trigger.extra.get("workflow_list"),
-            "event": ev_inv.get(reason.get("reason_index", 0), "subscriber_added"),
-            "apply_to_existing": (reason.get("config") or {}).get("apply_to_subscribers_in_list", False),
-        }
-        result["steps"] = _nodes_to_steps(trigger.siblings)
+    trigger = workflow.entry_point
+    ev_inv = _INV_TRIGGER_EVENT_MAP
+    reason = trigger.extra.get("trigger_reason") or {}
+    result["trigger"] = {
+        "list_id": trigger.extra.get("workflow_list"),
+        "event": ev_inv.get(reason.get("reason_index", 0), "subscriber_added"),
+        "apply_to_existing": (reason.get("config") or {}).get("apply_to_subscribers_in_list", False),
+    }
+    result["steps"] = _nodes_to_steps(trigger.siblings)
 
     return result
 
@@ -192,7 +196,7 @@ def _nodes_to_steps(nodes: list) -> list:
 
 
 def _node_to_step(node: "AutomationNode") -> Optional[dict]:
-    unit_inv = {v: k for k, v in _WAIT_UNIT_MAP.items()}
+    unit_inv = _INV_WAIT_UNIT_MAP
     nt = node.node_type
 
     if nt == "Delay":
