@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026-05-18] - OpenAPI spec completo de la API Acumbamail
+
+### Added
+
+- Creado `acumbamail-openapi.yaml`: especificación OpenAPI 3.0.3 completa de la API de Acumbamail
+- 47 endpoints documentados agrupados en 6 tags: Lists, Subscribers, Campaigns, Templates, SMTP, Webhooks
+- Schemas reutilizables: `AuthFields`, `ListInfo`, `SubscriberDetails`, `InactiveSubscriberFull`, `CampaignTotalInfo`, `CampaignClick`, `CampaignOpener`, `SMTPWebhookInfo`, `ListWebhookInfo`, etc.
+- Ejemplos reales en los schemas y respuestas
+- Documentación de comportamientos especiales: bug conocido en `batchDeleteSubscribers` (HTTP 500), clave `Creditos` con mayúscula en `getCreditsSMTP`, `template_id` como string en `duplicateTemplate`, requerimiento de SMTP activo para endpoints de envío
+- Extension `x-rate-limit: "10 requests/minute"` en cada operación
+- Descripciones completas de todos los códigos HTTP de respuesta (200, 201, 400, 401, 404, 429, 500)
+
 ## [2026-05-18] - Postman collection completa con todos los endpoints
 
 ### Added

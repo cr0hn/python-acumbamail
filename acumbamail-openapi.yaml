@@ -1,0 +1,2639 @@
+openapi: 3.0.3
+
+info:
+  title: Acumbamail API
+  version: "1.0"
+  description: |
+    REST API for Acumbamail email marketing platform.
+
+    ## Authentication
+    All endpoints require the `auth_token` field in the request body (JSON). There is no
+    header-based authentication. Optionally, include `response_type: "json"` (default).
+
+    ## Rate Limits
+    10 requests per minute per endpoint. Exceeding this limit returns HTTP 429.
+
+    ## HTTP Methods
+    All endpoints use **POST** with `Content-Type: application/json`.
+
+    ## Response Codes
+    | Code | Meaning |
+    |------|---------|
+    | 200  | Successful query |
+    | 201  | Data created/modified successfully |
+    | 400  | Bad request (invalid argument) |
+    | 401  | Unauthorized or SMTP not active |
+    | 404  | Resource not found |
+    | 429  | Rate limit exceeded |
+    | 500  | Server error |
+
+servers:
+  - url: https://acumbamail.com/api/1
+    description: Acumbamail production API
+
+tags:
+  - name: Lists
+    description: Manage subscriber lists
+  - name: Subscribers
+    description: Manage individual and batch subscribers
+  - name: Campaigns
+    description: Create, send and analyze email campaigns
+  - name: Templates
+    description: Manage email templates
+  - name: SMTP
+    description: Transactional email sending via SMTP
+  - name: Webhooks
+    description: Configure and query webhooks for SMTP and lists
+
+components:
+  schemas:
+
+    # ─────────────────────────────────────────
+    # Shared base fields
+    # ─────────────────────────────────────────
+    AuthFields:
+      type: object
+      required:
+        - auth_token
+      properties:
+        auth_token:
+          type: string
+          description: API authentication token
+          example: "abc123xyz"
+        response_type:
+          type: string
+          enum: [json]
+          default: json
+          description: Response format (always "json")
+
+    # ─────────────────────────────────────────
+    # Lists schemas
+    # ─────────────────────────────────────────
+    ListInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "AliceBob - Seguidores"
+        description:
+          type: string
+          example: ""
+
+    GetListsResponse:
+      type: object
+      description: >
+        Dictionary keyed by list_id (as string). Each value is a ListInfo object.
+      additionalProperties:
+        $ref: '#/components/schemas/ListInfo'
+      example:
+        "1138335":
+          name: "AliceBob - Seguidores"
+          description: ""
+
+    ListStatsResponse:
+      type: object
+      properties:
+        total_subscribers:
+          type: integer
+          example: 9
+        unsubscribed_subscribers:
+          type: integer
+          example: 0
+        hard_bounced_subscribers:
+          type: integer
+          example: 0
+        campaigns_sent:
+          type: integer
+          example: 5
+      required:
+        - total_subscribers
+        - unsubscribed_subscribers
+        - hard_bounced_subscribers
+        - campaigns_sent
+
+    ListFieldsResponse:
+      type: object
+      description: Dictionary mapping field_name to field_type
+      additionalProperties:
+        type: string
+      example:
+        email: "email"
+        "-curso >curso_a,curso_b,curso_c": "combobox"
+
+    # ─────────────────────────────────────────
+    # Subscribers schemas
+    # ─────────────────────────────────────────
+    SubscriberInfo:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "active"
+        id:
+          type: integer
+          format: int64
+          example: 5678672566
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+
+    GetSubscribersResponse:
+      type: object
+      description: Dictionary keyed by email address. Each value is a SubscriberInfo object.
+      additionalProperties:
+        $ref: '#/components/schemas/SubscriberInfo'
+      example:
+        "user@example.com":
+          status: "active"
+          id: 5678672566
+          email: "user@example.com"
+
+    SubscriberDetails:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "active"
+        create_date:
+          type: string
+          description: Creation date in "YYYY/MM/DD HH:MM:SS" format
+          example: "2025/06/30 07:32:30"
+        email:
+          type: string
+          format: email
+          example: "cr0hn@cr0hn.com"
+        id:
+          type: integer
+          format: int64
+          example: 5125884584
+      additionalProperties:
+        description: Additional custom merge field values
+
+    GetSubscriberDetailsResponse:
+      type: object
+      description: Dictionary keyed by email address. Value is SubscriberDetails.
+      additionalProperties:
+        $ref: '#/components/schemas/SubscriberDetails'
+      example:
+        "cr0hn@cr0hn.com":
+          status: "active"
+          create_date: "2025/06/30 07:32:30"
+          email: "cr0hn@cr0hn.com"
+          id: 5125884584
+          custom_field: ""
+
+    SearchSubscriberResult:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "active"
+        create_date:
+          type: string
+          example: "2025/06/30 07:32:30"
+        email:
+          type: string
+          format: email
+          example: "cr0hn@cr0hn.com"
+        list_id:
+          type: integer
+          example: 1138335
+        id:
+          type: integer
+          format: int64
+          example: 5125884584
+
+    InactiveSubscriberSimple:
+      type: array
+      description: Array with a single email address string
+      items:
+        type: string
+      minItems: 1
+      maxItems: 1
+      example: ["user@example.com"]
+
+    InactiveSubscriberFull:
+      type: object
+      properties:
+        reason:
+          type: integer
+          description: Reason code for inactivity (e.g. 3 = hard bounce)
+          example: 3
+        reason_date:
+          type: string
+          description: Date of the inactivity event in "YYYY/MM/DD HH:MM:SS" format
+          example: "2025/09/25 12:18:38"
+        email:
+          type: string
+          format: email
+          example: "daniel@abirtone.com"
+
+    GetInactiveSubscribersSimpleResponse:
+      type: object
+      properties:
+        inactive_subscribers:
+          type: array
+          items:
+            $ref: '#/components/schemas/InactiveSubscriberSimple'
+      example:
+        inactive_subscribers:
+          - ["email1@example.com"]
+          - ["email2@example.com"]
+
+    GetInactiveSubscribersFullResponse:
+      type: object
+      properties:
+        inactive_subscribers:
+          type: array
+          items:
+            $ref: '#/components/schemas/InactiveSubscriberFull'
+      example:
+        inactive_subscribers:
+          - reason: 3
+            reason_date: "2025/09/25 12:18:38"
+            email: "daniel@abirtone.com"
+
+    AddSubscriberFullResponse:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        id:
+          type: integer
+          format: int64
+          example: 5678672566
+
+    BatchSubscriberResult:
+      type: object
+      description: Dictionary mapping email to subscriber_id
+      additionalProperties:
+        type: integer
+        format: int64
+      example:
+        "user@example.com": 5678672566
+
+    # ─────────────────────────────────────────
+    # Campaigns schemas
+    # ─────────────────────────────────────────
+    CampaignTotalInfo:
+      type: object
+      properties:
+        total_delivered:
+          type: integer
+          example: 490
+        soft_bounces:
+          type: integer
+          example: 2
+        campaign_url:
+          type: string
+          format: uri
+          example: "https://acumbamail.com/..."
+        unsubscribes:
+          type: integer
+          example: 3
+        complaints:
+          type: integer
+          example: 0
+        unique_clicks:
+          type: integer
+          example: 45
+        unopened:
+          type: integer
+          example: 370
+        emails_to_send:
+          type: integer
+          example: 500
+        opened:
+          type: integer
+          example: 120
+        hard_bounces:
+          type: integer
+          example: 8
+        total_clicks:
+          type: integer
+          example: 62
+
+    CampaignClick:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          example: "https://example.com"
+        clicks:
+          type: integer
+          example: 100
+        unique_clicks:
+          type: integer
+          example: 80
+        click_rate:
+          type: number
+          format: float
+          example: 0.15
+        unique_click_rate:
+          type: number
+          format: float
+          example: 0.12
+
+    CampaignOpener:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        opened_at:
+          type: string
+          format: date-time
+          example: "2024-03-20T10:30:00"
+        ip:
+          type: string
+          example: "1.2.3.4"
+        user_agent:
+          type: string
+          example: "Mozilla/5.0..."
+        country:
+          type: string
+          example: "ES"
+        browser:
+          type: string
+          example: "Chrome"
+        os:
+          type: string
+          example: "Windows"
+        device:
+          type: string
+          example: "desktop"
+
+    CampaignSoftBounce:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        bounced_at:
+          type: string
+          format: date-time
+          example: "2024-03-20T10:30:00"
+        reason:
+          type: string
+          example: "Mailbox full"
+        status:
+          type: string
+          example: "4.2.2"
+        diagnostic_code:
+          type: string
+          example: "smtp; 452 4.2.2 Mailbox full"
+
+    # ─────────────────────────────────────────
+    # Templates schemas
+    # ─────────────────────────────────────────
+    TemplateInfo:
+      type: object
+      properties:
+        available:
+          type: boolean
+          example: false
+        id:
+          type: integer
+          example: 8974913
+        name:
+          type: string
+          example: "Template_3294239_96"
+
+    DuplicateTemplateResponse:
+      type: object
+      properties:
+        template_id:
+          type: string
+          description: Template ID returned as a string (note - not an integer)
+          example: "9491649"
+
+    # ─────────────────────────────────────────
+    # SMTP schemas
+    # ─────────────────────────────────────────
+    SMTPCreditsResponse:
+      type: object
+      properties:
+        Creditos:
+          type: integer
+          description: Remaining SMTP credits. Note the capital "C" in the key name.
+          example: 500000
+
+    SingleMessageRequest:
+      type: object
+      required:
+        - from_email
+        - to_email
+        - subject
+        - body
+      properties:
+        from_email:
+          type: string
+          format: email
+          example: "sender@example.com"
+        from_name:
+          type: string
+          example: "Sender Name"
+        to_email:
+          type: string
+          format: email
+          example: "recipient@example.com"
+        subject:
+          type: string
+          example: "Hello!"
+        body:
+          type: string
+          description: HTML body of the email
+          example: "<p>Hello!</p>"
+        cc_email:
+          type: string
+          format: email
+        bcc_email:
+          type: string
+          format: email
+        template_id:
+          type: integer
+          example: 8974913
+        merge_tags:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            FNAME: "John"
+            LNAME: "Doe"
+        category:
+          type: string
+          example: "transactional"
+        program_date:
+          type: string
+          description: Scheduled send date in "YYYY-MM-DD HH:MM" format
+          example: "2024-03-20 10:30"
+
+    # ─────────────────────────────────────────
+    # Webhook schemas
+    # ─────────────────────────────────────────
+    SMTPWebhookInfo:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          example: "https://example.com/webhook"
+        soft_bounces:
+          type: boolean
+          example: false
+        complaints:
+          type: boolean
+          example: false
+        delivered:
+          type: boolean
+          example: true
+        active:
+          type: boolean
+          example: false
+        hard_bounces:
+          type: boolean
+          example: true
+        id:
+          type: integer
+          example: 87492
+        opens:
+          type: boolean
+          example: false
+        clicks:
+          type: boolean
+          example: false
+
+    SMTPWebhookResponse:
+      type: object
+      properties:
+        info:
+          $ref: '#/components/schemas/SMTPWebhookInfo'
+
+    ListWebhookInfo:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          example: "https://example.com/webhook"
+        soft_bounces:
+          type: boolean
+          example: false
+        complaints:
+          type: boolean
+          example: false
+        unsubscribes:
+          type: boolean
+          example: true
+        subscribes:
+          type: boolean
+          example: true
+        active:
+          type: boolean
+          example: false
+        hard_bounces:
+          type: boolean
+          example: false
+        id:
+          type: integer
+          example: 102650
+        opens:
+          type: boolean
+          example: false
+        clicks:
+          type: boolean
+          example: false
+
+    ListWebhookResponse:
+      type: object
+      properties:
+        info:
+          $ref: '#/components/schemas/ListWebhookInfo'
+
+    WebhookIdResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 87492
+
+    # ─────────────────────────────────────────
+    # Error schemas
+    # ─────────────────────────────────────────
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Subscriber does not exist"
+
+paths:
+
+  # ═══════════════════════════════════════════
+  # LISTS
+  # ═══════════════════════════════════════════
+
+  /getLists/:
+    post:
+      tags: [Lists]
+      summary: Get all lists
+      description: Returns all subscriber lists for the authenticated account.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthFields'
+      responses:
+        '200':
+          description: Dictionary of lists keyed by list_id (string)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetListsResponse'
+        '401':
+          description: Unauthorized
+        '429':
+          description: Rate limit exceeded
+
+  /createList/:
+    post:
+      tags: [Lists]
+      summary: Create a new list
+      description: Creates a new subscriber list.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - sender_email
+                    - name
+                  properties:
+                    sender_email:
+                      type: string
+                      format: email
+                      example: "sender@example.com"
+                    name:
+                      type: string
+                      example: "My New List"
+                    company:
+                      type: string
+                      example: "ACME Corp"
+                    country:
+                      type: string
+                      example: "ES"
+                    city:
+                      type: string
+                      example: "Madrid"
+                    address:
+                      type: string
+                      example: "Calle Mayor 1"
+                    phone:
+                      type: string
+                      example: "+34 600 000 000"
+                    description:
+                      type: string
+                      example: "Subscribers newsletter"
+      responses:
+        '201':
+          description: ID of the newly created list
+          content:
+            application/json:
+              schema:
+                type: integer
+                example: 1138335
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Rate limit exceeded
+
+  /deleteList/:
+    post:
+      tags: [Lists]
+      summary: Delete a list
+      description: Permanently deletes a subscriber list and all its subscribers.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+      responses:
+        '201':
+          description: List deleted successfully (empty object)
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: List does not exist
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "List does not exists"
+        '401':
+          description: Unauthorized
+        '429':
+          description: Rate limit exceeded
+
+  /getListStats/:
+    post:
+      tags: [Lists]
+      summary: Get list statistics
+      description: Returns subscriber and campaign statistics for a specific list.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+      responses:
+        '200':
+          description: List statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListStatsResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: List not found
+        '429':
+          description: Rate limit exceeded
+
+  /getListFields/:
+    post:
+      tags: [Lists]
+      summary: Get fields for a list
+      description: Returns all field names and their types configured for a specific list.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+      responses:
+        '200':
+          description: Dictionary mapping field_name to field_type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListFieldsResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: List not found
+        '429':
+          description: Rate limit exceeded
+
+  /getFields/:
+    post:
+      tags: [Lists]
+      summary: Get all fields (including merge/combobox fields)
+      description: >
+        Returns all fields for a list including merge fields and combobox definitions.
+        Combobox fields use a special syntax: `-fieldname >option1,option2,option3`.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+      responses:
+        '200':
+          description: Dictionary mapping field_name/definition to field_type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListFieldsResponse'
+              example:
+                email: "email"
+                "-curso >curso_a,curso_b,curso_c": "combobox"
+        '401':
+          description: Unauthorized
+        '404':
+          description: List not found
+        '429':
+          description: Rate limit exceeded
+
+  /getForms/:
+    post:
+      tags: [Lists]
+      summary: Get forms for a list
+      description: Returns all subscription forms configured for a list. Returns empty object if no forms exist.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+      responses:
+        '200':
+          description: Dictionary of forms or empty object
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Unauthorized
+        '404':
+          description: List not found
+        '429':
+          description: Rate limit exceeded
+
+  /getListSegments/:
+    post:
+      tags: [Lists]
+      summary: Get segments for a list
+      description: Returns all segments defined for a specific list.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+      responses:
+        '200':
+          description: List of segments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        '401':
+          description: Unauthorized
+        '404':
+          description: List not found
+        '429':
+          description: Rate limit exceeded
+
+  /getListSubsStats/:
+    post:
+      tags: [Lists]
+      summary: Get subscriber statistics for a list (paginated)
+      description: >
+        Returns per-subscriber statistics for a list. Supports pagination via `block_index`
+        (each block returns up to 1000 subscribers, default block is 0).
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+                    block_index:
+                      type: integer
+                      default: 0
+                      description: Page index for pagination (0-based)
+                      example: 0
+      responses:
+        '200':
+          description: Dictionary with stats per subscriber
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Unauthorized
+        '404':
+          description: List not found
+        '429':
+          description: Rate limit exceeded
+
+  /getMergeFields/:
+    post:
+      tags: [Lists]
+      summary: Get merge fields for a list
+      description: Returns all merge fields (personalization tags) configured for a list.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+      responses:
+        '200':
+          description: Dictionary of merge fields
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+        '401':
+          description: Unauthorized
+        '404':
+          description: List not found
+        '429':
+          description: Rate limit exceeded
+
+  /addMergeTag/:
+    post:
+      tags: [Lists]
+      summary: Add a merge tag (custom field) to a list
+      description: >
+        Adds a new custom field to an existing list. Supported field types:
+        `text`, `combobox`, `date`, `number`.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                    - field_name
+                    - field_type
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+                    field_name:
+                      type: string
+                      example: "firstname"
+                    field_type:
+                      type: string
+                      enum: [text, combobox, date, number]
+                      example: "text"
+      responses:
+        '201':
+          description: Merge tag created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Invalid field type or name
+        '401':
+          description: Unauthorized
+        '404':
+          description: List not found
+        '429':
+          description: Rate limit exceeded
+
+  # ═══════════════════════════════════════════
+  # SUBSCRIBERS
+  # ═══════════════════════════════════════════
+
+  /getSubscribers/:
+    post:
+      tags: [Subscribers]
+      summary: Get subscribers for a list
+      description: >
+        Returns subscribers for a given list. Supports pagination via `block_index`.
+        Use `all_fields=1` to include custom merge fields in the response.
+        Use `complete_json=1` for full subscriber objects.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+                    block_index:
+                      type: integer
+                      default: 0
+                      description: Pagination block index (0-based, ~1000 subscribers per block)
+                      example: 0
+                    all_fields:
+                      type: integer
+                      enum: [0, 1]
+                      default: 0
+                      description: Set to 1 to include all custom merge fields
+                    complete_json:
+                      type: integer
+                      enum: [0, 1]
+                      default: 0
+                      description: Set to 1 for full subscriber objects
+      responses:
+        '200':
+          description: Dictionary of subscribers keyed by email
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetSubscribersResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: List not found
+        '429':
+          description: Rate limit exceeded
+
+  /addSubscriber/:
+    post:
+      tags: [Subscribers]
+      summary: Add a subscriber to a list
+      description: >
+        Adds a single subscriber to a list. The `merge_fields` object must contain
+        at minimum the `email` key. Use `double_optin=1` to trigger a confirmation email.
+        Use `complete_json=1` to get the full subscriber object in the response instead
+        of just the subscriber ID.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                    - merge_fields
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+                    merge_fields:
+                      type: object
+                      required:
+                        - email
+                      properties:
+                        email:
+                          type: string
+                          format: email
+                          example: "user@example.com"
+                      additionalProperties:
+                        type: string
+                      description: Merge field values. Must include "email".
+                    double_optin:
+                      type: integer
+                      enum: [0, 1]
+                      default: 0
+                      description: Send double opt-in confirmation email
+                    update_subscriber:
+                      type: integer
+                      enum: [0, 1]
+                      default: 0
+                      description: Update existing subscriber if already subscribed
+                    complete_json:
+                      type: integer
+                      enum: [0, 1]
+                      default: 0
+                      description: Return full subscriber object instead of just ID
+      responses:
+        '201':
+          description: >
+            If complete_json=0: integer subscriber ID.
+            If complete_json=1: full subscriber object with email and id.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: integer
+                    format: int64
+                    example: 5678672566
+                  - $ref: '#/components/schemas/AddSubscriberFullResponse'
+        '400':
+          description: Invalid request (e.g. missing email)
+        '401':
+          description: Unauthorized
+        '404':
+          description: List not found
+        '429':
+          description: Rate limit exceeded
+
+  /deleteSubscriber/:
+    post:
+      tags: [Subscribers]
+      summary: Delete a subscriber from a list
+      description: Permanently removes a subscriber from a list.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                    - email
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+                    email:
+                      type: string
+                      format: email
+                      example: "user@example.com"
+      responses:
+        '201':
+          description: Subscriber deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  email:
+                    type: string
+                    format: email
+                    example: "user@example.com"
+        '401':
+          description: Unauthorized
+        '404':
+          description: Subscriber or list not found
+        '429':
+          description: Rate limit exceeded
+
+  /batchAddSubscribers/:
+    post:
+      tags: [Subscribers]
+      summary: Batch add subscribers to a list
+      description: >
+        Adds multiple subscribers to a list in a single request. Each item in
+        `subscribers_data` must contain at least an `email` key.
+        Use `update_subscriber=1` to update existing subscribers.
+        Returns an array of `{email: subscriber_id}` objects.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                    - subscribers_data
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+                    subscribers_data:
+                      type: array
+                      description: Array of subscriber objects; each must have an "email" key
+                      items:
+                        type: object
+                        required:
+                          - email
+                        properties:
+                          email:
+                            type: string
+                            format: email
+                            example: "user@example.com"
+                        additionalProperties:
+                          type: string
+                    update_subscriber:
+                      type: integer
+                      enum: [0, 1]
+                      default: 0
+                      description: Update existing subscribers instead of skipping them
+                    complete_json:
+                      type: integer
+                      enum: [0, 1]
+                      default: 0
+      responses:
+        '201':
+          description: "Array of {email: subscriber_id} mappings"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BatchSubscriberResult'
+              example:
+                - "user@example.com": 5678672566
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '404':
+          description: List not found
+        '429':
+          description: Rate limit exceeded
+
+  /batchDeleteSubscribers/:
+    post:
+      tags: [Subscribers]
+      summary: Batch delete subscribers from a list
+      description: >
+        Deletes multiple subscribers from a list by email address.
+
+        **Known Bug**: This endpoint consistently returns HTTP 500 due to a server-side bug.
+        Use `deleteSubscriber` in a loop as a workaround.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                    - email_list
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+                    email_list:
+                      type: array
+                      items:
+                        type: string
+                        format: email
+                      example: ["user1@example.com", "user2@example.com"]
+      responses:
+        '500':
+          description: >
+            Server error — this endpoint has a known bug and always returns 500.
+            Use deleteSubscriber in a loop as a workaround.
+
+  /deleteAllSubscribers/:
+    post:
+      tags: [Subscribers]
+      summary: Delete all subscribers from a list
+      description: >
+        Removes all subscribers from a list. The operation runs in the background;
+        the response is returned immediately with an empty object.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+      responses:
+        '201':
+          description: Process started in background (empty object returned)
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Unauthorized
+        '404':
+          description: List not found
+        '429':
+          description: Rate limit exceeded
+
+  /unsubscribeSubscriber/:
+    post:
+      tags: [Subscribers]
+      summary: Unsubscribe a subscriber
+      description: Marks a subscriber as unsubscribed without deleting them from the list.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                    - email
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+                    email:
+                      type: string
+                      format: email
+                      example: "user@example.com"
+      responses:
+        '201':
+          description: Subscriber unsubscribed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Unauthorized
+        '404':
+          description: Subscriber or list not found
+        '429':
+          description: Rate limit exceeded
+
+  /getSubscriberDetails/:
+    post:
+      tags: [Subscribers]
+      summary: Get subscriber details
+      description: >
+        Returns detailed information about a specific subscriber including all custom field values.
+        The response is a dictionary keyed by the subscriber's email address.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                    - subscriber
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+                    subscriber:
+                      type: string
+                      format: email
+                      description: Email address of the subscriber
+                      example: "cr0hn@cr0hn.com"
+      responses:
+        '200':
+          description: Dictionary keyed by email with subscriber details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetSubscriberDetailsResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Subscriber not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Subscriber does not exist"
+        '429':
+          description: Rate limit exceeded
+
+  /searchSubscriber/:
+    post:
+      tags: [Subscribers]
+      summary: Search for a subscriber
+      description: >
+        Searches for subscribers by email address (full or partial match).
+        Returns results across all lists the subscriber belongs to.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - subscriber
+                  properties:
+                    subscriber:
+                      type: string
+                      description: Full email address or partial query string to search
+                      example: "cr0hn@cr0hn.com"
+      responses:
+        '200':
+          description: Array of matching subscribers with list membership info
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SearchSubscriberResult'
+              example:
+                - status: "active"
+                  create_date: "2025/06/30 07:32:30"
+                  email: "cr0hn@cr0hn.com"
+                  list_id: 1138335
+                  id: 5125884584
+        '401':
+          description: Unauthorized
+        '429':
+          description: Rate limit exceeded
+
+  /getInactiveSubscribers/:
+    post:
+      tags: [Subscribers]
+      summary: Get inactive subscribers within a date range
+      description: >
+        Returns subscribers who became inactive (bounced, complained, etc.) within the
+        specified date range.
+
+        When `full_info=0` (default), returns a minimal list of emails.
+        When `full_info=1`, returns full details including reason code and date.
+        Reason code 3 typically indicates a hard bounce.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - date_from
+                    - date_to
+                  properties:
+                    date_from:
+                      type: string
+                      format: date
+                      description: Start date in YYYY-MM-DD format
+                      example: "2025-01-01"
+                    date_to:
+                      type: string
+                      format: date
+                      description: End date in YYYY-MM-DD format
+                      example: "2025-12-31"
+                    full_info:
+                      type: integer
+                      enum: [0, 1]
+                      default: 0
+                      description: >
+                        Set to 1 to get full info (reason code and date) for each inactive subscriber
+      responses:
+        '200':
+          description: >
+            If full_info=0: array of single-element arrays with email.
+            If full_info=1: array of full InactiveSubscriber objects.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/GetInactiveSubscribersSimpleResponse'
+                  - $ref: '#/components/schemas/GetInactiveSubscribersFullResponse'
+        '401':
+          description: Unauthorized
+        '429':
+          description: Rate limit exceeded
+
+  # ═══════════════════════════════════════════
+  # CAMPAIGNS
+  # ═══════════════════════════════════════════
+
+  /createCampaign/:
+    post:
+      tags: [Campaigns]
+      summary: Create and optionally schedule a campaign
+      description: >
+        Creates a new email campaign. The `content` field must contain the
+        `*|UNSUBSCRIBE_URL|*` merge tag or the API will reject it.
+
+        Use `date_send` to schedule the campaign for a future time. If omitted,
+        the campaign is created in draft mode.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - name
+                    - from_name
+                    - from_email
+                    - subject
+                    - content
+                    - lists
+                  properties:
+                    name:
+                      type: string
+                      description: Internal campaign name
+                      example: "My Newsletter June 2024"
+                    from_name:
+                      type: string
+                      example: "John Doe"
+                    from_email:
+                      type: string
+                      format: email
+                      example: "newsletter@example.com"
+                    subject:
+                      type: string
+                      example: "June Newsletter"
+                    content:
+                      type: string
+                      description: HTML content; must include *|UNSUBSCRIBE_URL|* tag
+                      example: "<p>Hello!</p><a href=\"*|UNSUBSCRIBE_URL|*\">Unsubscribe</a>"
+                    lists:
+                      type: array
+                      items:
+                        type: integer
+                      description: Array of list IDs to send to
+                      example: [1138335]
+                    date_send:
+                      type: string
+                      description: Scheduled send date/time in "YYYY-MM-DD HH:MM" format
+                      example: "2024-06-01 09:00"
+                    tracking_urls:
+                      type: integer
+                      enum: [0, 1]
+                      description: Enable URL click tracking
+                    complete_json:
+                      type: integer
+                      enum: [1]
+                      description: Set to 1 for complete JSON response
+                    https:
+                      type: integer
+                      enum: [1]
+                      description: Force HTTPS for tracking links
+                    tracking_domain:
+                      type: string
+                      description: Custom tracking domain
+                      example: "track.example.com"
+                    pre_header:
+                      type: string
+                      description: Email preview text shown in inbox
+                      example: "Don't miss our latest offers!"
+      responses:
+        '201':
+          description: Campaign ID
+          content:
+            application/json:
+              schema:
+                type: integer
+                example: 9876543
+        '400':
+          description: Invalid request (e.g. missing unsubscribe tag)
+        '401':
+          description: Unauthorized
+        '429':
+          description: Rate limit exceeded
+
+  /sendTemplateCampaign/:
+    post:
+      tags: [Campaigns]
+      summary: Create a campaign from a template
+      description: >
+        Creates a new campaign using an existing template identified by `template_id`.
+        Optionally schedule with `date_send`.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - name
+                    - from_name
+                    - from_email
+                    - subject
+                    - template_id
+                    - lists
+                  properties:
+                    name:
+                      type: string
+                      example: "My Template Campaign"
+                    from_name:
+                      type: string
+                      example: "John Doe"
+                    from_email:
+                      type: string
+                      format: email
+                      example: "newsletter@example.com"
+                    subject:
+                      type: string
+                      example: "Newsletter June 2024"
+                    template_id:
+                      type: integer
+                      example: 8974913
+                    lists:
+                      type: array
+                      items:
+                        type: integer
+                      example: [1138335]
+                    date_send:
+                      type: string
+                      description: Scheduled send date in "YYYY-MM-DD HH:MM" format
+                      example: "2024-06-01 09:00"
+                    https:
+                      type: integer
+                      enum: [1]
+                      description: Force HTTPS for tracking links
+      responses:
+        '201':
+          description: Campaign ID
+          content:
+            application/json:
+              schema:
+                type: integer
+                example: 9876543
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Template not found
+        '429':
+          description: Rate limit exceeded
+
+  /getCampaigns/:
+    post:
+      tags: [Campaigns]
+      summary: Get all campaigns
+      description: Returns all campaigns for the account. Use `complete_json=1` for extended details.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  properties:
+                    complete_json:
+                      type: integer
+                      enum: [0, 1]
+                      default: 0
+                      description: Set to 1 for full campaign objects
+      responses:
+        '200':
+          description: Array of campaign objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+                    subject:
+                      type: string
+                    from_name:
+                      type: string
+                    from_email:
+                      type: string
+                    lists:
+                      type: array
+                      items:
+                        type: integer
+        '401':
+          description: Unauthorized
+        '429':
+          description: Rate limit exceeded
+
+  /getCampaignBasicInformation/:
+    post:
+      tags: [Campaigns]
+      summary: Get basic campaign information
+      description: Returns basic configuration details (name, subject, lists, etc.) for a specific campaign.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - campaign_id
+                  properties:
+                    campaign_id:
+                      type: integer
+                      example: 9876543
+      responses:
+        '200':
+          description: Campaign basic info
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Unauthorized
+        '404':
+          description: Campaign not found
+        '429':
+          description: Rate limit exceeded
+
+  /getCampaignTotalInformation/:
+    post:
+      tags: [Campaigns]
+      summary: Get campaign total statistics
+      description: Returns aggregate send/open/click/bounce statistics for a campaign.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - campaign_id
+                  properties:
+                    campaign_id:
+                      type: integer
+                      example: 9876543
+      responses:
+        '200':
+          description: Campaign total statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignTotalInfo'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Campaign not found
+        '429':
+          description: Rate limit exceeded
+
+  /getCampaignClicks/:
+    post:
+      tags: [Campaigns]
+      summary: Get campaign click statistics per URL
+      description: Returns click statistics broken down by URL for a campaign.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - campaign_id
+                  properties:
+                    campaign_id:
+                      type: integer
+                      example: 9876543
+      responses:
+        '200':
+          description: Array of URL click statistics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CampaignClick'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Campaign not found
+        '429':
+          description: Rate limit exceeded
+
+  /getCampaignOpeners/:
+    post:
+      tags: [Campaigns]
+      summary: Get campaign openers
+      description: Returns a list of subscribers who opened the campaign, with metadata.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - campaign_id
+                  properties:
+                    campaign_id:
+                      type: integer
+                      example: 9876543
+      responses:
+        '200':
+          description: Array of opener details
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CampaignOpener'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Campaign not found
+        '429':
+          description: Rate limit exceeded
+
+  /getCampaignOpenersByBrowser/:
+    post:
+      tags: [Campaigns]
+      summary: Get campaign openers by browser
+      description: Returns open counts grouped by browser name.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - campaign_id
+                  properties:
+                    campaign_id:
+                      type: integer
+                      example: 9876543
+      responses:
+        '200':
+          description: Dictionary mapping browser name to open count
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+              example:
+                Chrome: 120
+                Firefox: 30
+
+  /getCampaignOpenersByOs/:
+    post:
+      tags: [Campaigns]
+      summary: Get campaign openers by OS
+      description: Returns open counts grouped by operating system.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - campaign_id
+                  properties:
+                    campaign_id:
+                      type: integer
+                      example: 9876543
+      responses:
+        '200':
+          description: Dictionary mapping OS name to open count
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+              example:
+                Windows: 90
+                macOS: 60
+
+  /getCampaignOpenersByCountries/:
+    post:
+      tags: [Campaigns]
+      summary: Get campaign openers by country
+      description: Returns open counts grouped by ISO 3166-1 alpha-2 country code.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - campaign_id
+                  properties:
+                    campaign_id:
+                      type: integer
+                      example: 9876543
+      responses:
+        '200':
+          description: Dictionary mapping country code to open count
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+              example:
+                ES: 100
+                US: 50
+
+  /getCampaignInformationByISP/:
+    post:
+      tags: [Campaigns]
+      summary: Get campaign statistics grouped by ISP
+      description: Returns campaign delivery/open/click statistics grouped by Internet Service Provider.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - campaign_id
+                  properties:
+                    campaign_id:
+                      type: integer
+                      example: 9876543
+      responses:
+        '200':
+          description: Dictionary keyed by ISP name with campaign metrics
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Unauthorized
+        '404':
+          description: Campaign not found
+        '429':
+          description: Rate limit exceeded
+
+  /getCampaignLinks/:
+    post:
+      tags: [Campaigns]
+      summary: Get links used in a campaign
+      description: Returns all URLs present in the campaign's HTML content.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - campaign_id
+                  properties:
+                    campaign_id:
+                      type: integer
+                      example: 9876543
+      responses:
+        '200':
+          description: Array of URLs used in the campaign
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: uri
+        '401':
+          description: Unauthorized
+        '404':
+          description: Campaign not found
+        '429':
+          description: Rate limit exceeded
+
+  /getCampaignSoftBounces/:
+    post:
+      tags: [Campaigns]
+      summary: Get campaign soft bounces
+      description: Returns soft bounce details (temporary failures) for a campaign.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - campaign_id
+                  properties:
+                    campaign_id:
+                      type: integer
+                      example: 9876543
+      responses:
+        '200':
+          description: Array of soft bounce details
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CampaignSoftBounce'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Campaign not found
+        '429':
+          description: Rate limit exceeded
+
+  /getStatsByDate/:
+    post:
+      tags: [Campaigns]
+      summary: Get campaign statistics by date range
+      description: >
+        Returns daily email engagement statistics (opens, clicks, etc.) for subscribers
+        of a specific list, within a date range.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                    - date_from
+                    - date_to
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+                    date_from:
+                      type: string
+                      format: date
+                      description: Start date in YYYY-MM-DD format
+                      example: "2025-01-01"
+                    date_to:
+                      type: string
+                      format: date
+                      description: End date in YYYY-MM-DD format
+                      example: "2025-12-31"
+      responses:
+        '200':
+          description: Dictionary keyed by date (YYYY-MM-DD) with daily metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  properties:
+                    opens:
+                      type: integer
+                    clicks:
+                      type: integer
+              example:
+                "2025-01-01":
+                  opens: 10
+                  clicks: 3
+        '401':
+          description: Unauthorized
+        '404':
+          description: List not found
+        '429':
+          description: Rate limit exceeded
+
+  # ═══════════════════════════════════════════
+  # TEMPLATES
+  # ═══════════════════════════════════════════
+
+  /getTemplates/:
+    post:
+      tags: [Templates]
+      summary: Get all templates
+      description: Returns all available email templates for the account.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthFields'
+      responses:
+        '200':
+          description: Array of template objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TemplateInfo'
+              example:
+                - available: false
+                  id: 8974913
+                  name: "Template_3294239_96"
+        '401':
+          description: Unauthorized
+        '429':
+          description: Rate limit exceeded
+
+  /createTemplate/:
+    post:
+      tags: [Templates]
+      summary: Create a new template
+      description: >
+        Creates a new HTML email template. The `html_content` must include the
+        `*|UNSUBSCRIBE_URL|*` merge tag.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - template_name
+                    - html_content
+                    - subject
+                  properties:
+                    template_name:
+                      type: string
+                      example: "My Template"
+                    html_content:
+                      type: string
+                      description: HTML content; must include *|UNSUBSCRIBE_URL|* tag
+                      example: "<p>Hello!</p><a href=\"*|UNSUBSCRIBE_URL|*\">Unsubscribe</a>"
+                    subject:
+                      type: string
+                      example: "Newsletter"
+                    custom_category:
+                      type: string
+                      example: "Newsletter"
+                    bee_json:
+                      type: string
+                      description: BEE editor JSON source for the template
+                    id:
+                      type: integer
+                      description: Specific template ID to assign (optional)
+      responses:
+        '201':
+          description: ID of the newly created template
+          content:
+            application/json:
+              schema:
+                type: integer
+                example: 8974913
+        '400':
+          description: Invalid request (e.g. missing unsubscribe tag)
+        '401':
+          description: Unauthorized
+        '429':
+          description: Rate limit exceeded
+
+  /duplicateTemplate/:
+    post:
+      tags: [Templates]
+      summary: Duplicate an existing template
+      description: Creates a copy of an existing template with a new name.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - template_name
+                    - origin_template_id
+                  properties:
+                    template_name:
+                      type: string
+                      description: Name for the new (duplicate) template
+                      example: "My Template - Copy"
+                    origin_template_id:
+                      type: integer
+                      description: ID of the template to duplicate
+                      example: 8974913
+      responses:
+        '200':
+          description: >
+            Object containing the new template ID as a string.
+            Note: `template_id` is returned as a string, not an integer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DuplicateTemplateResponse'
+              example:
+                template_id: "9491649"
+        '401':
+          description: Unauthorized
+        '404':
+          description: Original template not found
+        '429':
+          description: Rate limit exceeded
+
+  # ═══════════════════════════════════════════
+  # SMTP
+  # ═══════════════════════════════════════════
+
+  /getCreditsSMTP/:
+    post:
+      tags: [SMTP]
+      summary: Get remaining SMTP credits
+      description: >
+        Returns the number of remaining transactional email credits.
+        Note: The response key is `Creditos` (with a capital C).
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthFields'
+      responses:
+        '200':
+          description: Remaining SMTP credits
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SMTPCreditsResponse'
+        '401':
+          description: Unauthorized
+        '429':
+          description: Rate limit exceeded
+
+  /sendOne/:
+    post:
+      tags: [SMTP]
+      summary: Send a single transactional email
+      description: >
+        Sends a single transactional email via SMTP. Requires SMTP to be active for
+        the account. Returns an `email_key` string that can be used with `getEmailStatus`
+        to track the message.
+
+        Returns HTTP 401 with "SMTP is not active for your customer" if SMTP is not enabled.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - $ref: '#/components/schemas/SingleMessageRequest'
+      responses:
+        '201':
+          description: Email key for tracking the sent message
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Unique email key for tracking
+                example: "abc123emailkey"
+        '401':
+          description: Unauthorized or SMTP not active for this account
+        '429':
+          description: Rate limit exceeded
+
+  /send/:
+    post:
+      tags: [SMTP]
+      summary: Send multiple transactional emails
+      description: >
+        Sends multiple transactional emails in a single request. Each item in
+        `messages` follows the same schema as `sendOne` (without auth fields).
+        Requires SMTP to be active.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - messages
+                  properties:
+                    messages:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/SingleMessageRequest'
+      responses:
+        '201':
+          description: Array of results for each message
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        '401':
+          description: Unauthorized or SMTP not active
+        '429':
+          description: Rate limit exceeded
+
+  /sendCertifiedEmail/:
+    post:
+      tags: [SMTP]
+      summary: Send a certified transactional email
+      description: >
+        Sends a certified (legal-proof) transactional email. Same parameters as `sendOne`.
+        Requires SMTP to be active. Returns an email_key for tracking.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - $ref: '#/components/schemas/SingleMessageRequest'
+      responses:
+        '201':
+          description: Email key for tracking
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "cert123emailkey"
+        '401':
+          description: Unauthorized or SMTP not active
+        '429':
+          description: Rate limit exceeded
+
+  /getEmailStatus/:
+    post:
+      tags: [SMTP]
+      summary: Get the delivery status of a sent email
+      description: >
+        Returns the current delivery status and metadata for an email sent via
+        `sendOne` or `sendCertifiedEmail`. Requires SMTP to be active.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - email_key
+                  properties:
+                    email_key:
+                      type: string
+                      description: Email tracking key returned by sendOne or sendCertifiedEmail
+                      example: "abc123emailkey"
+      responses:
+        '200':
+          description: Email delivery status and metadata
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Unauthorized or SMTP not active
+        '404':
+          description: Email key not found
+        '429':
+          description: Rate limit exceeded
+
+  # ═══════════════════════════════════════════
+  # WEBHOOKS
+  # ═══════════════════════════════════════════
+
+  /getSMTPWebhook/:
+    post:
+      tags: [Webhooks]
+      summary: Get SMTP webhook configuration
+      description: Returns the current SMTP webhook configuration for the account.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthFields'
+      responses:
+        '200':
+          description: SMTP webhook configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SMTPWebhookResponse'
+        '401':
+          description: Unauthorized
+        '429':
+          description: Rate limit exceeded
+
+  /configSMTPWebhook/:
+    post:
+      tags: [Webhooks]
+      summary: Configure SMTP webhook
+      description: >
+        Creates or updates the SMTP webhook configuration.
+        At minimum, `callback_url` must be provided.
+        All event flags (`delivered`, `hard_bounce`, etc.) default to 0 (disabled).
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - callback_url
+                  properties:
+                    callback_url:
+                      type: string
+                      format: uri
+                      description: URL to receive SMTP webhook events
+                      example: "https://example.com/webhook/smtp"
+                    delivered:
+                      type: integer
+                      enum: [0, 1]
+                      description: Notify on successful delivery
+                    hard_bounce:
+                      type: integer
+                      enum: [0, 1]
+                      description: Notify on hard bounce
+                    soft_bounce:
+                      type: integer
+                      enum: [0, 1]
+                      description: Notify on soft bounce
+                    complain:
+                      type: integer
+                      enum: [0, 1]
+                      description: Notify on spam complaint
+                    opens:
+                      type: integer
+                      enum: [0, 1]
+                      description: Notify on email open
+                    click:
+                      type: integer
+                      enum: [0, 1]
+                      description: Notify on link click
+                    active:
+                      type: integer
+                      enum: [0, 1]
+                      description: Enable/disable the webhook
+      responses:
+        '200':
+          description: Webhook ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookIdResponse'
+              example:
+                id: 87492
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '429':
+          description: Rate limit exceeded
+
+  /getListWebhook/:
+    post:
+      tags: [Webhooks]
+      summary: Get list webhook configuration
+      description: >
+        Returns the webhook configuration for a specific list.
+        Returns HTTP 404 if no webhook has been configured for the list.
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+      responses:
+        '200':
+          description: List webhook configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListWebhookResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: No webhook configured for this list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "You have not configured a webhook for this list"
+        '429':
+          description: Rate limit exceeded
+
+  /configListWebhook/:
+    post:
+      tags: [Webhooks]
+      summary: Configure list webhook
+      description: >
+        Creates or updates the webhook configuration for a specific list.
+        Both `list_id` and `callback_url` are required.
+        All event flags default to 0 (disabled).
+      x-rate-limit: "10 requests/minute"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AuthFields'
+                - type: object
+                  required:
+                    - list_id
+                    - callback_url
+                  properties:
+                    list_id:
+                      type: integer
+                      example: 1138335
+                    callback_url:
+                      type: string
+                      format: uri
+                      description: URL to receive list webhook events
+                      example: "https://example.com/webhook/list"
+                    subscribes:
+                      type: integer
+                      enum: [0, 1]
+                      description: Notify on new subscription
+                    unsubscribes:
+                      type: integer
+                      enum: [0, 1]
+                      description: Notify on unsubscribe
+                    hard_bounce:
+                      type: integer
+                      enum: [0, 1]
+                      description: Notify on hard bounce
+                    soft_bounce:
+                      type: integer
+                      enum: [0, 1]
+                      description: Notify on soft bounce
+                    complain:
+                      type: integer
+                      enum: [0, 1]
+                      description: Notify on spam complaint
+                    opens:
+                      type: integer
+                      enum: [0, 1]
+                      description: Notify on email open
+                    click:
+                      type: integer
+                      enum: [0, 1]
+                      description: Notify on link click
+                    active:
+                      type: integer
+                      enum: [0, 1]
+                      description: Enable/disable the webhook
+      responses:
+        '200':
+          description: Webhook ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookIdResponse'
+              example:
+                id: 102650
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '404':
+          description: List not found
+        '429':
+          description: Rate limit exceeded
