@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.1] — 2026-05-18
+## [0.3.1] — 2026-05-19
 
 ### Added
 - `AutomationClient.from_session(sessionid, csrftoken)` classmethod — creates a client from
@@ -15,12 +15,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `~/.config/acumbamail/session.json`. Subsequent automation commands reuse that session
   automatically (no credentials needed).
 - `playwright>=1.40.0` added to main dependencies.
+- `campaigns create` CLI command with `--html-file`/`--html`, `--from-email`, `--from-name`,
+  `--scheduled-at`, and multiple `--list-id` support.
+- Bundled `acumbamail-automations` Claude Code skill (install via `acumbamail install-skills`).
 
 ### Changed
 - `get_automation_client()` in `cli/utils.py` now checks `~/.config/acumbamail/session.json`
   first; falls back to email/password programmatic login if not found.
 - `close()` in `AutomationClient` is now safe even if `_client` was never set.
 - Error message for missing credentials now directs user to run `acumbamail automations login`.
+- `get_campaigns()` now correctly parses the `[{id_str: name}]` API response format.
+- `Template.from_api()` no longer raises `KeyError` when `content` is absent from list responses.
+
+### Fixed
+- Removed real API token accidentally committed to `CLAUDE.md` and `tests/test_contracts.py`;
+  both now read from `ACUMBAMAIL_TOKEN` env var. Git history purged.
+
+### Docs
+- Full README rewrite: hero banner, Getting Started, Automations as Code value proposition,
+  download buttons for OpenAPI spec and Postman collection, TOC, n8n integration section.
+- All documentation and bundled skills translated to English.
+- CHANGELOG translated to English.
 
 ## [0.3.0] — 2026-05-18
 
