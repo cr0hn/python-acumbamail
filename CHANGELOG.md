@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] — 2026-05-18
+
+### Added
+- `AutomationClient`: new session-based client for the Acumbamail automation API
+  (`/automation/api/`). Uses email+password auth (not API token).
+- `Automation` and `AutomationNode` dataclasses.
+- YAML-as-code support for automations: `load_yaml`, `validate_yaml`,
+  `deploy_yaml`, `export_yaml` in `acumbamail.automation_yaml`.
+- CLI command group `acumbamail automations` with subcommands:
+  - `list` — list all automations as JSON
+  - `deploy <file.yaml>` — idempotent deploy (create or update by name)
+  - `export --id|--name` — export existing automation to YAML
+  - `delete --id|--name` — delete automation
+- Claude Code skill `acumbamail/data/skills/acumbamail-automations/SKILL.md`
+  with full API reference and examples.
+- Auth: `ACUMBAMAIL_EMAIL` + `ACUMBAMAIL_PASSWORD` env vars (or `--email`/`--password` flags).
+
+### Notes
+- `pyyaml` promoted from dev-only to main dependency.
+- Automation API requires web session auth; public API token does not work.
+
 ## [Unreleased]
 
 ## [2026-05-18] - CLI de automatizaciones: list, deploy, export, delete
