@@ -321,9 +321,17 @@ class TestCampaignsContracts:
         assert "template_id" in data
         assert isinstance(data["template_id"], str), \
             f"Quirk: template_id debe ser string, obtenido: {type(data['template_id'])}"
-        # Limpiar template duplicado
-        copy_id = int(data["template_id"])
-        call_api("deleteSubscriber", {"list_id": LIST_ID, "email": "nobody"})  # no-op para no complicar
+
+    def test_getTemplatesByName_returns_404_server_bug(self, spec):
+        """getTemplatesByName está documentado en la API oficial pero el servidor
+        devuelve 404 'El endpoint no existe'. Verificado 2026-05-18.
+        Este test documenta el bug: si algún día pasa a 200, el spec ya está listo."""
+        status, data = call_api("getTemplatesByName", {"template_name": "Template_"})
+        assert status == 404, (
+            f"getTemplatesByName ya funciona (HTTP {status}). "
+            "Actualiza el spec: elimina x-status y la advertencia."
+        )
+        assert "no existe" in str(data).lower() or "not found" in str(data).lower()
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -88,7 +88,7 @@ class TestSpecStructure:
         assert not unresolved, f"$ref no resueltos: {unresolved}"
 
     def test_all_endpoints_count(self, spec):
-        assert len(spec["paths"]) == 47
+        assert len(spec["paths"]) == 48
 
     def test_all_schemas_count(self, spec):
         assert len(spec["components"]["schemas"]) == 30

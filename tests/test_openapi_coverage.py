@@ -28,25 +28,28 @@ def sdk_endpoints() -> set:
 
 class TestCoverage:
     def test_all_sdk_endpoints_in_spec(self, sdk_endpoints, spec_endpoints):
-        """Cada endpoint que usa el SDK está documentado en el spec.
-
-        Excluimos getTemplatesByName porque está en el SDK pero aún no
-        documentado en el spec (pendiente de documentar).
-        """
-        known_undocumented = {"getTemplatesByName"}
-        missing = sdk_endpoints - spec_endpoints - known_undocumented
+        """Cada endpoint que usa el SDK está documentado en el spec."""
+        missing = sdk_endpoints - spec_endpoints
         assert not missing, f"Endpoints del SDK sin documentar en spec: {missing}"
 
     def test_spec_has_no_unknown_endpoints(self, sdk_endpoints, spec_endpoints):
-        """No hay endpoints en el spec que el SDK no use.
-
-        Excluimos los SMTP que requieren plan especial — están documentados
-        pero el SDK los tiene como métodos que podrían no llamarse en tests.
-        """
-        # Endpoints válidos no en el SDK actual (SMTP batch, etc.)
-        known_extra = {"send", "sendCertifiedEmail", "sendOne", "getEmailStatus"}
+        """No hay endpoints en el spec que el SDK no use."""
+        # SMTP batch y transaccional: documentados, requieren plan activo
+        # getTemplatesByName: documentado en API oficial pero retorna 404 server-side
+        known_extra = {"send", "sendCertifiedEmail", "sendOne", "getEmailStatus", "getTemplatesByName"}
         unknown = spec_endpoints - sdk_endpoints - known_extra
         assert not unknown, f"Endpoints en spec sin usar en SDK: {unknown}"
+
+    def test_get_templates_by_name_is_in_spec(self, spec_endpoints):
+        """getTemplatesByName está en el spec (documentado pero no implementado en servidor)."""
+        assert "getTemplatesByName" in spec_endpoints
+
+    def test_get_templates_by_name_is_marked_not_implemented(self, spec):
+        """getTemplatesByName tiene la extension x-status: documented-not-implemented."""
+        op = spec["paths"]["/getTemplatesByName/"]["post"]
+        assert op.get("x-status") == "documented-not-implemented"
+        # Y su descripción advierte del problema
+        assert "404" in op.get("description", "") or "not implemented" in op.get("description", "").lower()
 
     def test_spec_covers_subscriber_endpoints(self, spec_endpoints):
         expected = {
