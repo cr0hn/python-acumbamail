@@ -13,7 +13,12 @@ def client():
 
 def mock_login(httpx_mock: HTTPXMock):
     httpx_mock.add_response(method="GET", url=f"{BASE}/login/", text=LOGIN_HTML, status_code=200)
-    httpx_mock.add_response(method="POST", url=f"{BASE}/login/", text="<html>ok</html>", status_code=200)
+    httpx_mock.add_response(
+        method="POST", url=f"{BASE}/login/2fa/",
+        text="<html>ok</html>",
+        status_code=200,
+        headers={"Set-Cookie": "sessionid=test_session_123; Path=/; HttpOnly"},
+    )
 
 
 class TestLogin:
@@ -28,7 +33,10 @@ class TestLogin:
         requests = httpx_mock.get_requests()
         post_req = requests[1]
         assert post_req.method == "POST"
+        assert "/login/2fa/" in str(post_req.url)
         body = post_req.content.decode()
+        assert "auth-username" in body
+        assert "auth-password" in body
         assert "user%40test.com" in body or "user@test.com" in body
         assert "password123" in body
 
@@ -47,12 +55,23 @@ class TestLogin:
             status_code=200,
         )
         httpx_mock.add_response(
-            method="POST", url=f"{BASE}/login/",
+            method="POST", url=f"{BASE}/login/2fa/",
             text='<input name="csrfmiddlewaretoken" value="new_csrf_456">',
             status_code=200,
+            headers={"Set-Cookie": "sessionid=test_session_123; Path=/; HttpOnly"},
         )
         client.login()
         assert client._csrf_token == "new_csrf_456"
+
+    def test_login_raises_if_no_session_cookie(self, client, httpx_mock: HTTPXMock):
+        httpx_mock.add_response(method="GET", url=f"{BASE}/login/", text=LOGIN_HTML, status_code=200)
+        httpx_mock.add_response(
+            method="POST", url=f"{BASE}/login/2fa/",
+            text="<html>wrong credentials</html>",
+            status_code=200,
+        )
+        with pytest.raises(ValueError, match="Login failed"):
+            client.login()
 
     def test_context_manager_calls_login(self, httpx_mock: HTTPXMock):
         mock_login(httpx_mock)

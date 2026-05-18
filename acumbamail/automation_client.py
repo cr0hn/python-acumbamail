@@ -25,24 +25,34 @@ class AutomationClient:
         return match.group(1)
 
     def login(self) -> None:
+        # GET the login page to extract CSRF token
         resp = self._client.get(f"{BASE_URL}/login/")
         resp.raise_for_status()
         self._csrf_token = self._extract_csrf(resp.text)
+        # Acumbamail uses a wizard form: POST to /login/2fa/ with auth-* field names
         resp = self._client.post(
-            f"{BASE_URL}/login/",
+            f"{BASE_URL}/login/2fa/",
             data={
-                "username": self._email,
-                "password": self._password,
                 "csrfmiddlewaretoken": self._csrf_token,
+                "login_view-current_step": "auth",
+                "auth-username": self._email,
+                "auth-password": self._password,
+                "google-id-token": "",
             },
             headers={"Referer": f"{BASE_URL}/login/"},
         )
         resp.raise_for_status()
+        if not self._client.cookies.get("sessionid"):
+            raise ValueError("Login failed: no session cookie received. Check credentials.")
+        # Update CSRF token from response if available
         if resp.text:
             try:
                 self._csrf_token = self._extract_csrf(resp.text)
             except ValueError:
                 pass
+        # Use the current CSRF cookie if no newer token found in HTML
+        if not self._csrf_token:
+            self._csrf_token = self._client.cookies.get("csrftoken", "")
 
     def _headers(self) -> dict:
         return {"X-CSRFToken": self._csrf_token or "", "Content-Type": "application/json"}
