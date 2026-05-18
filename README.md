@@ -1,4 +1,6 @@
-# acumbamail
+<p align="center">
+  <img src="https://raw.githubusercontent.com/cr0hn/python-acumbamail/main/assets/acumbamail-logo.svg" alt="Acumbamail" width="320">
+</p>
 
 <p align="center">
   <em>Complete Python SDK, CLI, and automation workflows for <a href="https://acumbamail.com">Acumbamail</a> email marketing.</em>
