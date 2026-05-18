@@ -207,3 +207,53 @@ class TestSubscribersCommands:
         data = json.loads(result.output)
         assert len(data) == 2
         assert data[0]["email"] == "x@test.com"
+
+
+class TestCampaignsCommands:
+    def test_campaigns_list_outputs_json(self):
+        from acumbamail.cli.main import app
+        from acumbamail.models import Campaign
+
+        mock_campaigns = [
+            Campaign(id=1, name="Camp1", subject="Subj", content="", from_name="X", from_email="x@x.com", list_ids=[1])
+        ]
+        with patch("acumbamail.cli.commands.campaigns.get_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get_campaigns.return_value = mock_campaigns
+            mock_get_client.return_value = mock_client
+
+            result = runner.invoke(app, ["--token", "tk", "campaigns", "list"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data[0]["id"] == 1
+        assert data[0]["name"] == "Camp1"
+
+    def test_campaigns_info_outputs_dict(self):
+        from acumbamail.cli.main import app
+        with patch("acumbamail.cli.commands.campaigns.get_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get_campaign_basic_information.return_value = {"id": 1, "name": "Camp1"}
+            mock_get_client.return_value = mock_client
+
+            result = runner.invoke(app, ["--token", "tk", "campaigns", "info", "--campaign-id", "1"])
+
+        assert result.exit_code == 0
+        assert json.loads(result.output)["id"] == 1
+
+    def test_campaigns_stats_outputs_dict(self):
+        from acumbamail.cli.main import app
+        from acumbamail.models import CampaignTotalInformation
+
+        mock_stats = CampaignTotalInformation(total_delivered=100, opened=50, unique_clicks=20)
+        with patch("acumbamail.cli.commands.campaigns.get_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get_campaign_total_information.return_value = mock_stats
+            mock_get_client.return_value = mock_client
+
+            result = runner.invoke(app, ["--token", "tk", "campaigns", "stats", "--campaign-id", "1"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["total_delivered"] == 100
+        assert data["opened"] == 50
