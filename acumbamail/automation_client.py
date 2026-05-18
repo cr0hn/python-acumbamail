@@ -67,7 +67,14 @@ class AutomationClient:
             self._csrf_token = self._client.cookies.get("csrftoken", "")
 
     def _headers(self) -> dict:
-        return {"X-CSRFToken": self._csrf_token or "", "Content-Type": "application/json"}
+        # Prefer current cookie value; include Origin+Referer for Django CSRF validation
+        csrf = self._client.cookies.get("csrftoken") or self._csrf_token or ""
+        return {
+            "X-CSRFToken": csrf,
+            "Content-Type": "application/json",
+            "Origin": BASE_URL,
+            "Referer": f"{BASE_URL}/automation/workflow-list",
+        }
 
     def _get(self, path: str) -> httpx.Response:
         resp = self._client.get(f"{BASE_URL}{path}")
@@ -126,13 +133,17 @@ class AutomationClient:
     def deactivate_workflow(self, workflow_id: int) -> Automation:
         return self.update_workflow(workflow_id, active=False)
 
-    def create_node(self, node_type: str, workflow_id: int, source_id: str, siblings: Optional[list] = None) -> dict:
-        return self._post(f"/automation/api/{node_type.lower()}/", {
+    def create_node(self, node_type: str, workflow_id: int, source_id: str,
+                    siblings: Optional[list] = None, extra: Optional[dict] = None) -> dict:
+        payload: dict = {
             "sourceId": source_id,
             "nodeType": node_type,
             "workflow": str(workflow_id),
             "siblings": siblings or [],
-        }).json()
+        }
+        if extra:
+            payload.update(extra)
+        return self._post(f"/automation/api/{node_type.lower()}/", payload).json()
 
     def update_node(self, node_type: str, node_id: str, payload: dict) -> dict:
         return self._put(f"/automation/api/{node_type.lower()}/{node_id}/", payload).json()

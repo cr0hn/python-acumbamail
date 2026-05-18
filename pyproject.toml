@@ -13,6 +13,7 @@ dependencies = [
     "playwright>=1.40.0",
     "pyyaml>=6.0.1",
     "typer>=0.15.0",
+    "undetected-chromedriver>=3.5.5",
 ]
 
 [project.scripts]

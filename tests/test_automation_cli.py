@@ -29,7 +29,9 @@ class TestAutomationsList:
 
     def test_exits_1_without_credentials(self):
         from acumbamail.cli.main import app
-        result = runner.invoke(app, ["automations", "list"], env={})
+        # Patch session file to not exist so we fall through to credential check
+        with patch("acumbamail.cli.utils.os.path.exists", return_value=False):
+            result = runner.invoke(app, ["automations", "list"], env={})
         assert result.exit_code == 1
 
 
