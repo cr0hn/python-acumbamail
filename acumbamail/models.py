@@ -510,7 +510,7 @@ class Template:
         return cls(
             id=int(data['id']),
             name=data['name'],
-            content=data['content'],
+            content=data.get('content', ''),
             created_at=datetime.fromisoformat(data['created_at']) if 'created_at' in data else None,
             updated_at=datetime.fromisoformat(data['updated_at']) if 'updated_at' in data else None
         )

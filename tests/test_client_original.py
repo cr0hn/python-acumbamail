@@ -576,17 +576,10 @@ class TestGetCampaignOpenersByOs:
 
 class TestGetCampaigns:
     def test_returns_list_of_campaigns(self, client, httpx_mock: HTTPXMock):
+        # Real API returns [{str_id: campaign_name}, ...] — one key per item
         httpx_mock.add_response(
             url=api_url("getCampaigns"),
-            json=[{
-                "id": 1,
-                "name": "Camp1",
-                "subject": "Subj",
-                "content": "<p>test *|UNSUBSCRIBE_URL|*</p>",
-                "from_name": "Sender",
-                "from_email": "sender@test.com",
-                "lists": [LIST_ID],
-            }],
+            json=[{"1": "Camp1"}],
         )
         result = client.get_campaigns(complete_json=True)
         assert len(result) == 1

@@ -905,16 +905,33 @@ class AsyncAcumbamailClient:
     async def get_campaigns(self, complete_json: bool = False) -> List[Campaign]:
         """
         Get all campaigns.
-        
+
+        Returns a list of campaigns with id and name only (the API returns a
+        summary format). Use get_campaign_basic_information(campaign_id) for
+        full details including subject, from_email, etc.
+
         Args:
-            complete_json (bool, optional): Whether to return complete campaign information
-            
+            complete_json (bool): Not used — API returns same format regardless
+
         Returns:
-            List[Campaign]: List of campaign objects
+            List[Campaign]: List of campaigns with id and name populated.
         """
         await self._ensure_client()
         response = await self._call_api("getCampaigns", {"complete_json": 1 if complete_json else 0})
-        return [Campaign.from_api(data) for data in response]
+        campaigns = []
+        for item in response:
+            # API returns [{str_id: campaign_name}, ...] — one key per item
+            for str_id, name in item.items():
+                campaigns.append(Campaign(
+                    id=int(str_id),
+                    name=name,
+                    subject="",
+                    content="",
+                    from_name="",
+                    from_email="",
+                    list_ids=[],
+                ))
+        return campaigns
 
     async def get_campaign_soft_bounces(self, campaign_id: int) -> List[CampaignSoftBounce]:
         """
