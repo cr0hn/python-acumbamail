@@ -18,13 +18,18 @@ from .utils import manage_api_response_id
 
 from .models import (
     CampaignTotalInformation,
-    MailList, 
-    Campaign, 
-    Subscriber, 
-    CampaignClick, 
-    CampaignOpener, 
+    MailList,
+    Campaign,
+    Subscriber,
+    CampaignClick,
+    CampaignOpener,
     CampaignSoftBounce,
-    Template
+    Template,
+    BatchSubscriberResult,
+    SubscriberDetails,
+    InactiveSubscriber,
+    SMTPWebhook,
+    ListWebhook,
 )
 from .exceptions import (
     AcumbamailError, 
@@ -1099,15 +1104,270 @@ class AsyncAcumbamailClient:
     async def get_merge_fields(self, list_id: int) -> List[Dict[str, Any]]:
         """
         Get merge fields for a mailing list.
-        
+
         Args:
             list_id (int): ID of the mailing list
-            
+
         Returns:
             List[Dict[str, Any]]: List of merge fields and their configurations
         """
         await self._ensure_client()
         return await self._call_api("getMergeFields", {"list_id": list_id})
+
+    async def add_merge_tag(self, list_id: int, field_name: str, field_type: str) -> None:
+        """Add a merge tag (custom field) to a mailing list."""
+        await self._ensure_client()
+        await self._call_api("addMergeTag", {"list_id": list_id, "field_name": field_name, "field_type": field_type})
+
+    async def batch_add_subscribers(self, list_id: int, subscribers_data: List[Dict[str, Any]], update_subscriber: bool = False) -> List[BatchSubscriberResult]:
+        """Add multiple subscribers to a mailing list in a single call."""
+        await self._ensure_client()
+        data = {
+            "list_id": list_id,
+            "update_subscriber": 1 if update_subscriber else 0,
+            "subscribers_data": subscribers_data,
+            "complete_json": 1,
+        }
+        response = await self._call_api("batchAddSubscribers", data)
+        return [BatchSubscriberResult.from_api(item) for item in response]
+
+    async def batch_delete_subscribers(self, list_id: int, email_list: List[str]) -> None:
+        """Delete multiple subscribers from a mailing list."""
+        await self._ensure_client()
+        await self._call_api("batchDeleteSubscribers", {"list_id": list_id, "email_list": email_list})
+
+    async def delete_all_subscribers(self, list_id: int) -> None:
+        """Delete all subscribers from a mailing list."""
+        await self._ensure_client()
+        await self._call_api("deleteAllSubscribers", {"list_id": list_id})
+
+    async def delete_list(self, list_id: int) -> None:
+        """Delete a mailing list."""
+        await self._ensure_client()
+        await self._call_api("deleteList", {"list_id": list_id})
+
+    async def get_smtp_credits(self) -> int:
+        """Get the number of remaining SMTP credits."""
+        await self._ensure_client()
+        response = await self._call_api("getCreditsSMTP")
+        return int(response["Creditos"])
+
+    async def get_fields(self, list_id: int) -> Dict[str, str]:
+        """Get the fields defined for a mailing list."""
+        await self._ensure_client()
+        return await self._call_api("getFields", {"list_id": list_id})
+
+    async def get_forms(self, list_id: int) -> Dict[str, Any]:
+        """Get the subscription forms for a mailing list."""
+        await self._ensure_client()
+        return await self._call_api("getForms", {"list_id": list_id})
+
+    async def get_inactive_subscribers(self, date_from: datetime, date_to: datetime, full_info: bool = False) -> List:
+        """Get inactive subscribers within a date range."""
+        await self._ensure_client()
+        data = {
+            "date_from": date_from.strftime("%Y-%m-%d"),
+            "date_to": date_to.strftime("%Y-%m-%d"),
+            "full_info": 1 if full_info else 0,
+        }
+        response = await self._call_api("getInactiveSubscribers", data)
+        items = response.get("inactive_subscribers", [])
+        if full_info:
+            return [InactiveSubscriber.from_api(item) for item in items]
+        return [item[0] for item in items]
+
+    async def get_subscriber_details(self, list_id: int, subscriber_email: str) -> SubscriberDetails:
+        """Get detailed information about a specific subscriber."""
+        await self._ensure_client()
+        response = await self._call_api("getSubscriberDetails", {"list_id": list_id, "subscriber": subscriber_email})
+        data = next(iter(response.values()))
+        return SubscriberDetails.from_api(data)
+
+    async def search_subscriber(self, subscriber: str) -> List[SubscriberDetails]:
+        """Search for a subscriber across all lists."""
+        await self._ensure_client()
+        response = await self._call_api("searchSubscriber", {"subscriber": subscriber})
+        return [SubscriberDetails.from_api(item) for item in response]
+
+    async def unsubscribe_subscriber(self, list_id: int, email: str) -> None:
+        """Unsubscribe a subscriber from a mailing list."""
+        await self._ensure_client()
+        await self._call_api("unsubscribeSubscriber", {"list_id": list_id, "email": email})
+
+    async def send_template_campaign(
+        self,
+        name: str,
+        subject: str,
+        template_id: int,
+        list_ids: List[int],
+        from_name: str = None,
+        from_email: str = None,
+        scheduled_at: datetime = None,
+        https: bool = True,
+    ) -> Campaign:
+        """Create and send a campaign based on a template."""
+        await self._ensure_client()
+        if not from_email and not self.default_sender_email:
+            raise AcumbamailValidationError("from_email or default_sender_email is required for creating campaigns")
+
+        data = {
+            "name": name,
+            "from_name": from_name or self.default_sender_name,
+            "from_email": from_email or self.default_sender_email,
+            "subject": subject,
+            "template_id": template_id,
+            "lists": list_ids,
+            "https": 1 if https else 0,
+        }
+
+        if scheduled_at:
+            data["date_send"] = scheduled_at.strftime("%Y-%m-%d %H:%M")
+
+        response = await self._call_api("sendTemplateCampaign", data)
+        campaign_id = manage_api_response_id(response)
+
+        return Campaign(
+            id=campaign_id,
+            name=name,
+            subject=subject,
+            content="",
+            from_name=from_name or self.default_sender_name,
+            from_email=from_email or self.default_sender_email,
+            list_ids=list_ids,
+            scheduled_at=scheduled_at,
+        )
+
+    async def duplicate_template(self, template_name: str, origin_template_id: int) -> Template:
+        """Duplicate an existing template under a new name."""
+        await self._ensure_client()
+        response = await self._call_api("duplicateTemplate", {"template_name": template_name, "origin_template_id": origin_template_id})
+        template_id = int(response["template_id"])
+        return Template(id=template_id, name=template_name, content="")
+
+    async def get_campaign_openers_by_countries(self, campaign_id: int) -> Dict[str, int]:
+        """Get campaign openers grouped by country."""
+        await self._ensure_client()
+        return await self._call_api("getCampaignOpenersByCountries", {"campaign_id": campaign_id})
+
+    async def get_templates_by_name(self, template_name: str) -> List[Template]:
+        """Search templates by name."""
+        await self._ensure_client()
+        response = await self._call_api("getTemplatesByName", {"template_name": template_name})
+        if isinstance(response, list):
+            return [Template.from_api(data) for data in response]
+        return []
+
+    async def send_emails(self, messages: List[Dict[str, Any]]) -> List[Any]:
+        """Send multiple emails via SMTP in batch."""
+        await self._ensure_client()
+        return await self._call_api("send", {"messages": messages})
+
+    async def send_certified_email(
+        self,
+        to_email: str,
+        subject: str,
+        content: str,
+        from_name: str = None,
+        from_email: str = None,
+        cc_email: str = None,
+        bcc_email: str = None,
+        category: str = '',
+    ) -> str:
+        """Send a certified email via SMTP."""
+        await self._ensure_client()
+        if not from_email and not self.default_sender_email:
+            raise AcumbamailValidationError("from_email or default_sender_email is required for sending emails")
+
+        data = {
+            "from_name": from_name or self.default_sender_name,
+            "from_email": from_email or self.default_sender_email,
+            "to_email": to_email,
+            "subject": subject,
+            "body": content,
+            "category": category,
+        }
+
+        if cc_email:
+            data["cc_email"] = cc_email
+
+        if bcc_email:
+            data["bcc_email"] = bcc_email
+
+        response = await self._call_api("sendCertifiedEmail", data)
+        return str(response)
+
+    async def get_email_status(self, email_key: str) -> Dict[str, Any]:
+        """Get the delivery status of a sent email."""
+        await self._ensure_client()
+        return await self._call_api("getEmailStatus", {"email_key": email_key})
+
+    async def get_smtp_webhook(self) -> SMTPWebhook:
+        """Get the current SMTP webhook configuration."""
+        await self._ensure_client()
+        response = await self._call_api("getSMTPWebhook")
+        return SMTPWebhook.from_api(response)
+
+    async def get_list_webhook(self, list_id: int) -> ListWebhook:
+        """Get the webhook configuration for a mailing list."""
+        await self._ensure_client()
+        response = await self._call_api("getListWebhook", {"list_id": list_id})
+        return ListWebhook.from_api(response)
+
+    async def config_smtp_webhook(
+        self,
+        callback_url: str,
+        delivered: bool = False,
+        hard_bounce: bool = False,
+        soft_bounce: bool = False,
+        complain: bool = False,
+        opens: bool = False,
+        click: bool = False,
+        active: bool = True,
+    ) -> int:
+        """Configure the SMTP webhook."""
+        await self._ensure_client()
+        data = {
+            "callback_url": callback_url,
+            "delivered": 1 if delivered else 0,
+            "hard_bounce": 1 if hard_bounce else 0,
+            "soft_bounce": 1 if soft_bounce else 0,
+            "complain": 1 if complain else 0,
+            "opens": 1 if opens else 0,
+            "click": 1 if click else 0,
+            "active": 1 if active else 0,
+        }
+        response = await self._call_api("configSMTPWebhook", data)
+        return int(response["id"])
+
+    async def config_list_webhook(
+        self,
+        list_id: int,
+        callback_url: str,
+        subscribes: bool = False,
+        unsubscribes: bool = False,
+        hard_bounce: bool = False,
+        soft_bounce: bool = False,
+        complain: bool = False,
+        opens: bool = False,
+        click: bool = False,
+        active: bool = True,
+    ) -> int:
+        """Configure the webhook for a mailing list."""
+        await self._ensure_client()
+        data = {
+            "list_id": list_id,
+            "callback_url": callback_url,
+            "subscribes": 1 if subscribes else 0,
+            "unsubscribes": 1 if unsubscribes else 0,
+            "hard_bounce": 1 if hard_bounce else 0,
+            "soft_bounce": 1 if soft_bounce else 0,
+            "complain": 1 if complain else 0,
+            "opens": 1 if opens else 0,
+            "click": 1 if click else 0,
+            "active": 1 if active else 0,
+        }
+        response = await self._call_api("configListWebhook", data)
+        return int(response["id"])
 
 
 __all__ = ("AsyncAcumbamailClient",) 
