@@ -14,6 +14,35 @@
 <a href="https://pepy.tech/project/acumbamail"><img src="https://static.pepy.tech/badge/acumbamail/month" alt="Monthly downloads"></a>
 </p>
 
+<p align="center">
+<a href="https://raw.githubusercontent.com/cr0hn/python-acumbamail/main/acumbamail-openapi.yaml"><img src="https://img.shields.io/badge/Download-OpenAPI%203.0.3-85EA2D?logo=openapiinitiative&logoColor=white" alt="Download OpenAPI spec"></a>
+<a href="https://raw.githubusercontent.com/cr0hn/python-acumbamail/main/Acumbamail.postman_collection.json"><img src="https://img.shields.io/badge/Download-Postman%20Collection-FF6C37?logo=postman&logoColor=white" alt="Download Postman collection"></a>
+</p>
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Getting Started](#getting-started)
+- [Usage](#usage)
+  - [Python SDK](#python-sdk)
+  - [CLI](#cli)
+  - [Automations as Code](#automations-as-code)
+- [API Reference](#api-reference)
+  - [Mailing Lists](#mailing-lists)
+  - [Subscribers](#subscribers)
+  - [Campaigns](#campaigns)
+  - [Templates](#templates)
+  - [SMTP Transactional](#smtp-transactional)
+  - [Webhooks](#webhooks)
+- [Error Handling](#error-handling)
+- [Claude Code Skill](#claude-code-skill)
+- [Examples](#examples)
+- [Contributing](#contributing)
+- [License](#license)
+
 ---
 
 **acumbamail** is a Python SDK and CLI with complete coverage of the [Acumbamail](https://acumbamail.com) REST API. It provides **sync and async clients**, a **JSON-outputting CLI** for shell scripting and CI pipelines, and — uniquely — **automation workflows as YAML code** so you can version-control and deploy email sequences the same way you deploy software.
