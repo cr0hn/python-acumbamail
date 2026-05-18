@@ -6,6 +6,8 @@ This package provides a Python client for the Acumbamail API.
 
 from .client import AcumbamailClient
 from .aclient import AsyncAcumbamailClient
+from .automation_client import AutomationClient
+from .automation_models import Automation, AutomationNode
 from .exceptions import (
     AcumbamailError,
     AcumbamailRateLimitError,
@@ -50,4 +52,7 @@ __all__ = [
     "SMTPWebhook",
     "ListWebhook",
     "BatchSubscriberResult",
+    "AutomationClient",
+    "Automation",
+    "AutomationNode",
 ]

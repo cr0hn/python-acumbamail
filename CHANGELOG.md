@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026-05-18] - CLI de automatizaciones: list, deploy, export, delete
+
+### Added
+
+- `acumbamail/cli/commands/automations.py`: nuevo módulo CLI con 4 comandos (`list`, `deploy`, `export`, `delete`) usando `AutomationClient`
+- `acumbamail/cli/utils.py`: función `get_automation_client()` que resuelve credenciales desde `--email`/`--password` o `ACUMBAMAIL_EMAIL`/`ACUMBAMAIL_PASSWORD`
+- `acumbamail/cli/main.py`: registrado el grupo `automations` en el CLI principal
+- `acumbamail/__init__.py`: exportados `AutomationClient`, `Automation`, `AutomationNode` en `__all__`
+- `tests/test_automation_cli.py`: 8 tests unitarios (sin red) para todos los comandos
+
 ## [2026-05-18] - Alinear versión a 0.2.0, Optional[str] en type hints, exports explícitos en __init__.py
 
 ### Changed
