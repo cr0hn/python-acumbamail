@@ -4,94 +4,113 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Python SDK for the [Acumbamail](https://acumbamail.com) email marketing API. Provides both synchronous (`AcumbamailClient`) and asynchronous (`AsyncAcumbamailClient`) clients.
+Python SDK + CLI for the [Acumbamail](https://acumbamail.com) email marketing API. Sync (`AcumbamailClient`) and async (`AsyncAcumbamailClient`) clients, plus the `acumbamail` CLI command.
 
 ## Development Setup
 
 ```bash
-# Install dependencies
-uv sync
-
-# Run a script/test manually
-uv run python examples/sync_example.py
-
-# Run a single test
-uv run python -m pytest tests/test_client.py::TestClassName::test_method -v
+uv sync                          # install deps (includes typer, httpx)
+uv run pytest                    # run all tests
+uv run pytest tests/test_cli.py::TestListsCommands -v   # single class
+uv run acumbamail --help         # verify CLI works
+uv build --wheel                 # build distribution
 ```
 
 ## Architecture
 
-The SDK mirrors Acumbamail's REST API (base: `https://acumbamail.com/api/1/<endpoint>/`, always POST with JSON body).
-
 ```
 acumbamail/
-├── client.py      # Sync client (AcumbamailClient) — httpx.Client per call
-├── aclient.py     # Async client (AsyncAcumbamailClient) — shared httpx.AsyncClient via context manager
-├── models.py      # Dataclasses: MailList, Subscriber, Campaign, Template, CampaignTotalInformation, etc.
-├── exceptions.py  # Exception hierarchy: AcumbamailError → AcumbamailAPIError, AcumbamailRateLimitError, AcumbamailValidationError
-└── utils.py       # manage_api_response_id() — extracts int ID from various API response shapes
+├── client.py       # Sync client — httpx.Client per call
+├── aclient.py      # Async client — shared httpx.AsyncClient (async context manager or .close())
+├── models.py       # Dataclasses with from_api() classmethods
+├── exceptions.py   # AcumbamailError → APIError, RateLimitError, ValidationError
+├── utils.py        # manage_api_response_id() — normalizes int IDs from varied response shapes
+├── data/
+│   └── skills/acumbamail-cli/SKILL.md   # bundled Claude Code skill (shipped in wheel)
+└── cli/
+    ├── main.py                  # Typer app, registers all groups + install-skills
+    ├── utils.py                 # get_client(), print_json(), handle_error()
+    └── commands/
+        ├── lists.py             # list, create, delete, stats
+        ├── subscribers.py       # list, add, delete, search, unsubscribe, batch-add
+        ├── campaigns.py         # list, info, stats
+        ├── webhooks.py          # smtp-get/config, list-get/config
+        └── install_skills.py    # install-skills [-g]
 ```
 
 **Key patterns:**
-- All API calls go through `_call_api(endpoint, data)` which injects `auth_token` and `response_type: json`, handles 429 with exponential backoff (3 retries, 10s × retry).
-- `AsyncAcumbamailClient` must be used as an async context manager (`async with`) or `.close()` must be called. The sync client opens/closes httpx per request.
-- Models have `from_api(data)` classmethods and `to_api_payload()` where write operations are needed.
-- Campaigns require `*|UNSUBSCRIBE_URL|*` in content — enforced at SDK level before the API call.
-- `create_list()` requires `default_sender_email` set on the client.
+- All API calls go through `_call_api(endpoint, data)` — injects `auth_token`+`response_type: json`, retries 429 with backoff (3× at 10s·retry).
+- Models: `from_api(data)` parses API dicts; `to_api_payload()` for write ops (Campaign).
+- Campaigns require `*|UNSUBSCRIBE_URL|*` in content — validated before calling API.
+- `create_list()` requires `default_sender_email` set on client.
+- CLI: auth via `ACUMBAMAIL_TOKEN` env var or `--token` flag. All output JSON to stdout, errors to stderr + exit 1.
 
-## API Reference
+## API Implementation Coverage
 
-The Postman collection (`Acumbamail.postman_collection.json`) in the repo root is the authoritative reference for endpoint names and parameters. The official docs are at https://acumbamail.com/apidoc/ (requires login).
+All endpoints implemented. Intentionally excluded: SMS. Known broken/missing:
+- `batchDeleteSubscribers` — API returns HTTP 500 (server bug, implemented anyway)
+- `getTemplatesByName` — endpoint returns 404 (not implemented server-side)
+- SMTP `send`, `sendCertifiedEmail`, `getEmailStatus` — require SMTP plan activation
+
+## API Quirks (discovered via live testing)
+
+| Endpoint | Quirk |
+|----------|-------|
+| `getCreditsSMTP` | Returns `{"Creditos": int}` — capital C |
+| `duplicateTemplate` | Returns `{"template_id": "123"}` — ID as string |
+| `getInactiveSubscribers` | `full_info=0` → `[["email"]]`; `full_info=1` → `[{"reason": int, "reason_date": "YYYY/MM/DD HH:MM:SS", "email": str}]` |
+| `getSubscriberDetails` | Returns `{"email@x.com": {...}}` — outer key is the email |
+| `addSubscriber` with `complete_json=1` | Returns `{"email": "...", "id": int}` |
+| `deleteSubscriber` | Returns `{"email": "..."}` not `{}` |
+| `getFields` | Returns `{"field_name": "field_type"}` dict |
+| `getSubscribers` | `status` param is int, not string |
+
+## Models
+
+| Model | Source endpoint | Key fields |
+|-------|----------------|------------|
+| `MailList` | getLists | id, name, subscribers_count, bounced_count |
+| `Subscriber` | getSubscribers | email, list_id, is_active, fields |
+| `SubscriberDetails` | getSubscriberDetails / searchSubscriber | id, email, status, create_date, list_id, fields (dict of extra keys) |
+| `InactiveSubscriber` | getInactiveSubscribers | email, reason, reason_date |
+| `Campaign` | getCampaigns / createCampaign | id, name, subject, content, from_email, list_ids |
+| `CampaignTotalInformation` | getCampaignTotalInformation | total_delivered, opened, unique_clicks, hard_bounces, … |
+| `Template` | getTemplates | id, name, content |
+| `BatchSubscriberResult` | batchAddSubscribers | email, subscriber_id |
+| `SMTPWebhook` | getSMTPWebhook | id, url, active, delivered, hard_bounces, … |
+| `ListWebhook` | getListWebhook | id, url, active, subscribes, unsubscribes, … |
 
 ## Testing
 
-```bash
-# Ejecutar todos los tests (usan mocks, sin llamadas reales a la API)
-uv run pytest
+Tests use `pytest-httpx` mocks — no real API calls. `asyncio_mode = "auto"` in `pyproject.toml`.
 
-# Un test concreto
-uv run pytest tests/test_client_new_methods.py::TestBatchAddSubscribers -v
-
-# Tests de modelos
-uv run pytest tests/test_models.py -v
-
-# Tests async
-uv run pytest tests/test_aclient_new_methods.py -v
 ```
-
-Tests con `pytest-httpx` — mocking de httpx. Para el cliente async se usa `pytest.mark.asyncio` con `asyncio_mode = "auto"` (configurado en `pyproject.toml`).
+tests/
+├── test_models.py                  # dataclass parsing from raw API responses
+├── test_client_new_methods.py      # sync client (all new methods)
+├── test_aclient_new_methods.py     # async client (mirrors sync tests)
+└── test_cli.py                     # CLI via typer.testing.CliRunner + unittest.mock
+```
 
 ## CLI
 
-Instalado automáticamente con el paquete como comando `acumbamail`:
-
 ```bash
-export ACUMBAMAIL_TOKEN=<tu_token>
+export ACUMBAMAIL_TOKEN=YOUR_TOKEN_HERE
 
-# Listas
 acumbamail lists list
-acumbamail lists create --name "Mi Lista" --sender-email sender@x.com
-acumbamail lists stats --list-id 123
+acumbamail lists create --name "Lista" --sender-email x@x.com
+acumbamail subscribers batch-add --list-id 1138335 --file subs.json
+acumbamail campaigns stats --campaign-id 999
+acumbamail webhooks list-config --list-id 1138335 --url https://... --subscribes --active
 
-# Suscriptores
-acumbamail subscribers list --list-id 123
-acumbamail subscribers add --list-id 123 --email x@x.com
-acumbamail subscribers search --query x@x.com
-acumbamail subscribers batch-add --list-id 123 --file subs.json
-
-# Campañas
-acumbamail campaigns list
-acumbamail campaigns stats --campaign-id 456
-
-# Webhooks
-acumbamail webhooks smtp-get
-acumbamail webhooks list-config --list-id 123 --url https://... --subscribes --active
+# Install Claude Code skill (teaches Claude how to use this CLI)
+acumbamail install-skills        # → .claude/skills/acumbamail-cli/
+acumbamail install-skills -g     # → ~/.claude/skills/acumbamail-cli/
 ```
 
-O con flag: `acumbamail --token <token> lists list`. Salida siempre JSON a stdout. Errores a stderr con exit code 1.
+Output is always JSON. Use `jq` for filtering: `acumbamail lists list | jq '.[].id'`
 
-## Test Token & List
+## Test Credentials
 
-- Auth token for testing: `YOUR_TOKEN_HERE`
-- Test list: ID `1138335` (https://acumbamail.com/app/list/1138335/)
-- SMS endpoints are excluded from this SDK intentionally.
+- Auth token: `YOUR_TOKEN_HERE`
+- Test list ID: `1138335`
