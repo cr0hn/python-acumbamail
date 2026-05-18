@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026-05-18] - SDK improvements: nuevos parámetros y eliminación de dead code
+
+### Added
+
+- `add_subscriber` (sync + async): nuevos parámetros `double_optin: bool = False` y `update_subscriber: bool = False`, enviados como `0`/`1` en el body del request
+- `get_subscribers` (sync + async): nuevos parámetros `block_index: int = 0`, `all_fields: bool = False`, `complete_json: bool = False` para paginación y control del detalle de respuesta
+- `get_list_subs_stats` (sync + async): nuevo parámetro `block_index: int = 0` para paginación
+- `tests/test_client_new_methods.py`: 11 tests nuevos en `TestAddSubscriberNewParams`, `TestGetSubscribersNewParams`, `TestGetListSubsStatsNewParams`
+- `tests/test_aclient_new_methods.py`: 11 tests nuevos equivalentes para el cliente async
+
+### Removed
+
+- `acumbamail/utils.py`: eliminadas 8 funciones dead code que no eran usadas en ningún punto del SDK:
+  `validate_email`, `format_date`, `generate_subscriber_hash`, `clean_html`,
+  `merge_subscriber_fields`, `parse_api_response`, `format_campaign_content`,
+  `validate_campaign_data`, `format_subscriber_data`
+- Se conserva únicamente `manage_api_response_id` (usada en `client.py` y `aclient.py`)
+
 ## [2026-05-18] - Tests de calidad y contract testing del OpenAPI spec
 
 ### Added
