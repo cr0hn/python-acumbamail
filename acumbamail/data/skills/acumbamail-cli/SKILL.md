@@ -75,27 +75,63 @@ acumbamail subscribers batch-add --list-id 123 --file subscribers.json --update 
 # → [{"email": "a@x.com", "subscriber_id": 111}, {"email": "b@x.com", "subscriber_id": 222}]
 ```
 
-### `campaigns` — Campaign analytics
+### `campaigns` — Campañas de email
 
 ```bash
-# List all campaigns
+# Crear y enviar una campaña
+acumbamail campaigns create \
+  --name "Newsletter Mayo" \
+  --subject "Novedades de este mes" \
+  --html-file email.html \
+  --list-id 1138335 \
+  --from-email sender@domain.com \
+  --from-name "Mi Empresa"
+# → {"id": 3294239, "name": "Newsletter Mayo", "subject": "...", "from_email": "...", "list_ids": [...]}
+
+# HTML inline en lugar de fichero
+acumbamail campaigns create \
+  --name "Aviso" --subject "Importante" \
+  --html '<h1>Hola</h1><a href="*|UNSUBSCRIBE_URL|*">Baja</a>' \
+  --list-id 1138335
+
+# Programar para más tarde
+acumbamail campaigns create \
+  --name "Newsletter" --subject "..." \
+  --html-file email.html --list-id 1138335 \
+  --scheduled-at "2026-06-01 09:00"
+
+# Enviar a varias listas
+acumbamail campaigns create \
+  --name "Promo" --subject "Oferta" \
+  --html-file promo.html \
+  --list-id 1138335 --list-id 1155778
+
+# Listar campañas existentes
 acumbamail campaigns list
 # → [{"id": 1, "name": "Newsletter #1", "subject": "...", "from_email": "...", "list_ids": [123]}, ...]
 
-# Get basic campaign info
+# Info básica de una campaña
 acumbamail campaigns info --campaign-id 999
-# → {"id": 999, "name": "...", "subject": "...", ...}
 
-# Get full campaign stats
+# Estadísticas completas
 acumbamail campaigns stats --campaign-id 999
-# → {
-#     "total_delivered": 490, "emails_to_send": 500,
-#     "opened": 120, "unique_clicks": 45, "total_clicks": 62,
-#     "hard_bounces": 8, "soft_bounces": 2,
-#     "unsubscribes": 3, "complaints": 0,
-#     "unopened": 370, "campaign_url": "https://..."
-#   }
+# → {"total_delivered": 490, "opened": 120, "unique_clicks": 45, "hard_bounces": 8, ...}
 ```
+
+**Requisitos del HTML obligatorios:**
+
+El HTML de la campaña DEBE contener el tag de desuscripción, si no el comando falla con un error claro:
+
+```html
+<!-- OBLIGATORIO — Acumbamail lo reemplaza con la URL real de baja -->
+<a href="*|UNSUBSCRIBE_URL|*">Darse de baja</a>
+```
+
+**Errores comunes:**
+
+- `Error: el HTML no contiene el tag de desuscripción` → añade `*|UNSUBSCRIBE_URL|*` al HTML
+- `Error: el email del remitente no está verificado` → verifica el remitente en https://acumbamail.com/app/account/senders/ antes de crear campañas
+- `from_email or default_sender_email is required` → añade `--from-email sender@domain.com`
 
 ### `webhooks` — Webhook configuration
 
