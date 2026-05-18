@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026-05-18] - CLI: comandos de suscriptores, campañas y webhooks
+
+### Added
+
+- Implementado `acumbamail/cli/commands/subscribers.py` con comandos: `list`, `add`, `delete`, `search`, `unsubscribe`, `batch-add`
+- Implementado `acumbamail/cli/commands/campaigns.py` con comandos: `list`, `info`, `stats`
+- Implementado `acumbamail/cli/commands/webhooks.py` con comandos: `smtp-get`, `smtp-config`, `list-get`, `list-config`
+- Añadidos 13 tests TDD en `tests/test_cli.py` (clases `TestSubscribersCommands`, `TestCampaignsCommands`, `TestWebhooksCommands`) — total 118 tests pasando
+
 ## [2026-05-18] - CLI: comandos de listas y main.py inicial
 
 ### Added
