@@ -59,6 +59,71 @@ pipx install acumbamail
 
 Requires Python 3.13+.
 
+## Getting Started
+
+**1. Get your API token** — log in to [acumbamail.com](https://acumbamail.com), go to **Settings → API**, and copy your token.
+
+**2. Set the environment variable:**
+
+```bash
+export ACUMBAMAIL_TOKEN=your-token-here
+```
+
+**3. Create a list and send your first campaign:**
+
+```python
+from acumbamail import AcumbamailClient
+
+client = AcumbamailClient(
+    auth_token="your-token",
+    default_sender_email="hello@mycompany.com",
+    default_sender_name="My Company",
+)
+
+# Create a mailing list
+lst = client.create_list("My Newsletter")
+print(f"List created: {lst.id}")
+
+# Add a subscriber
+client.add_subscriber("alice@example.com", lst.id, fields={"nombre": "Alice"})
+
+# Send your first campaign
+campaign = client.create_campaign(
+    name="First Campaign",
+    subject="Hello from acumbamail!",
+    content="""
+        <h1>Hello *|FNAME|*!</h1>
+        <p>Welcome to our newsletter.</p>
+        <a href="*|UNSUBSCRIBE_URL|*">Unsubscribe</a>
+    """,
+    list_ids=[lst.id],
+)
+print(f"Campaign sent: {campaign.id}")
+
+# Check results the next day
+stats = client.get_campaign_total_information(campaign.id)
+print(f"Delivered: {stats.total_delivered}, Opened: {stats.opened}")
+```
+
+Or with the CLI:
+
+```console
+$ acumbamail lists create --name "My Newsletter" --sender-email hello@mycompany.com
+{"id": 1138335, "name": "My Newsletter"}
+
+$ acumbamail subscribers add --list-id 1138335 --email alice@example.com
+{"email": "alice@example.com", "list_id": 1138335}
+
+$ acumbamail campaigns create \
+    --name "First Campaign" --subject "Hello!" \
+    --html '<h1>Hi!</h1><a href="*|UNSUBSCRIBE_URL|*">Unsubscribe</a>' \
+    --list-id 1138335 --from-email hello@mycompany.com
+{"id": 3294239, "name": "First Campaign", ...}
+```
+
+> [!TIP]
+> Your sender email must be verified in Acumbamail before sending campaigns. Add it at **Settings → Verified senders**.
+
 ## Usage
 
 ### Python SDK
