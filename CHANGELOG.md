@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026-05-18] - fix(examples): actualizar todos los ejemplos a API actual
+
+### Changed
+
+- `examples/sync_example.py`: corregida variable de entorno a `ACUMBAMAIL_TOKEN`; flujo actualizado a `get_lists`, `add_subscriber`, `get_subscribers`, `create_campaign` (con `*|UNSUBSCRIBE_URL|*`), `get_campaign_total_information`; eliminado `pre_header` (no existe en la firma actual)
+- `examples/async_example.py`: mismos cambios que `sync_example.py` pero con `AsyncAcumbamailClient` y `async with`; corregida variable de entorno
+- `examples/campaign_analytics.py`: corregida variable de entorno; añadidos `get_campaign_openers_by_browser` y `get_campaign_openers_by_os`; eliminado análisis de openers por email (usa `get_campaign_openers` que no está en la lista de métodos disponibles); simplificado para usar solo métodos reales del SDK
+- `examples/bulk_operations.py`: reescrito completamente; usa `batch_add_subscribers`, `search_subscriber` y `get_inactive_subscribers(full_info=True)` en lugar de bucles individuales; corregida variable de entorno
+- `examples/ab_testing.py`: simplificado; crea dos campañas con distintos subjects y compara `get_campaign_total_information`; añadido `*|UNSUBSCRIBE_URL|*` en el contenido; eliminada dependencia de `pre_header` inexistente; corregida variable de entorno
+- `examples/automated_workflows.py`: reescrito; usa `create_list`, `batch_add_subscribers`, `create_campaign`, `get_campaign_total_information` y `get_list_webhook`/`config_list_webhook`; añadido `*|UNSUBSCRIBE_URL|*`; corregida variable de entorno
+- `examples/error_handling.py`: reescrito; muestra `AcumbamailValidationError` con email inválido y campaña sin `*|UNSUBSCRIBE_URL|*`, `AcumbamailAPIError`, `AcumbamailRateLimitError`; eliminado `SafeAcumbamailClient` y `CircuitBreaker` (fuera del scope del ejemplo); corregida variable de entorno
+- `examples/example-001.py`: convertido en "Hello World" mínimo con `os.getenv("ACUMBAMAIL_TOKEN")` en lugar de token hardcodeado
+- `examples/README.md`: reescrito completamente; documenta todos los ejemplos con métodos reales, aviso sobre operaciones destructivas, y nota sobre `*|UNSUBSCRIBE_URL|*`
+
 ## [2026-05-18] - Migrar CI/CD de Poetry a uv con Trusted Publishing; actualizar README
 
 ### Changed
