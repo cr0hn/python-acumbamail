@@ -26,12 +26,34 @@ def handle_error(e: Exception) -> None:
     raise SystemExit(1)
 
 
+_SESSION_FILE = os.path.expanduser("~/.config/acumbamail/session.json")
+
+
 def get_automation_client(email: str | None, password: str | None) -> "AutomationClient":
     from acumbamail.automation_client import AutomationClient
+    import json
+
+    # Try stored session first
+    if os.path.exists(_SESSION_FILE):
+        try:
+            with open(_SESSION_FILE) as f:
+                session = json.load(f)
+            if session.get("sessionid"):
+                return AutomationClient.from_session(
+                    session["sessionid"], session.get("csrftoken", "")
+                )
+        except (json.JSONDecodeError, KeyError):
+            pass
+
+    # Fall back to email/password programmatic login
     resolved_email = email or os.environ.get("ACUMBAMAIL_EMAIL")
     resolved_password = password or os.environ.get("ACUMBAMAIL_PASSWORD")
     if not resolved_email or not resolved_password:
-        typer.echo("Error: ACUMBAMAIL_EMAIL and ACUMBAMAIL_PASSWORD are required for automation commands", err=True)
+        typer.echo(
+            "Error: run 'acumbamail automations login' first, "
+            "or set ACUMBAMAIL_EMAIL and ACUMBAMAIL_PASSWORD",
+            err=True,
+        )
         raise SystemExit(1)
     client = AutomationClient(resolved_email, resolved_password)
     client.login()

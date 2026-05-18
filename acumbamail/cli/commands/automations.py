@@ -12,6 +12,47 @@ _EMAIL_OPT = typer.Option(None, "--email", envvar="ACUMBAMAIL_EMAIL")
 _PASS_OPT = typer.Option(None, "--password", envvar="ACUMBAMAIL_PASSWORD")
 
 
+@app.command("login")
+def login_automation():
+    """Abre Chrome para autenticarte con Acumbamail y guarda la sesión."""
+    import json
+    from pathlib import Path
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        typer.echo("Error: playwright no instalado. Ejecuta: uv add playwright && playwright install chrome", err=True)
+        raise SystemExit(1)
+
+    typer.echo("Abriendo Chrome... Inicia sesión en Acumbamail.")
+    with sync_playwright() as p:
+        browser = p.chromium.launch(channel="chrome", headless=False)
+        context = browser.new_context()
+        page = context.new_page()
+        page.goto("https://acumbamail.com/login/")
+        try:
+            page.wait_for_url("**/app/**", timeout=120_000)
+        except Exception:
+            typer.echo("Error: tiempo de espera agotado o login cancelado.", err=True)
+            browser.close()
+            raise SystemExit(1)
+
+        cookies = {c["name"]: c["value"] for c in context.cookies("https://acumbamail.com")}
+        browser.close()
+
+    sessionid = cookies.get("sessionid")
+    csrftoken = cookies.get("csrftoken", "")
+    if not sessionid:
+        typer.echo("Error: no se encontró la cookie de sesión tras el login.", err=True)
+        raise SystemExit(1)
+
+    session_dir = Path.home() / ".config" / "acumbamail"
+    session_dir.mkdir(parents=True, exist_ok=True)
+    with open(session_dir / "session.json", "w") as f:
+        json.dump({"sessionid": sessionid, "csrftoken": csrftoken}, f)
+
+    print_json({"status": "ok", "message": "Sesión guardada. Ya puedes usar los comandos de automatizaciones."})
+
+
 @app.command("list")
 def list_automations(
     email: Optional[str] = _EMAIL_OPT,

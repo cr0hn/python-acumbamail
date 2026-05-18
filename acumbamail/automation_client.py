@@ -14,6 +14,18 @@ class AutomationClient:
         self._client = httpx.Client(follow_redirects=True)
         self._csrf_token: Optional[str] = None
 
+    @classmethod
+    def from_session(cls, sessionid: str, csrftoken: str) -> "AutomationClient":
+        """Create client from existing session cookies (no login needed)."""
+        instance = cls.__new__(cls)
+        instance._email = None
+        instance._password = None
+        instance._csrf_token = csrftoken
+        instance._client = httpx.Client(follow_redirects=False)
+        instance._client.cookies.set("sessionid", sessionid, domain="acumbamail.com", path="/")
+        instance._client.cookies.set("csrftoken", csrftoken, domain="acumbamail.com", path="/")
+        return instance
+
     def _extract_csrf(self, html: str) -> str:
         match = re.search(
             r'name=["\']csrfmiddlewaretoken["\'][^>]*value=["\']([^"\']+)["\']', html
@@ -129,7 +141,9 @@ class AutomationClient:
         self._delete(f"/automation/api/{node_type.lower()}/{node_id}/")
 
     def close(self) -> None:
-        self._client.close()
+        client = getattr(self, "_client", None)
+        if client is not None:
+            client.close()
 
     def __enter__(self) -> "AutomationClient":
         self.login()
