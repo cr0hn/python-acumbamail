@@ -72,7 +72,7 @@ class TestDeployStep:
             "wait_time": 1, "wait_unit": 2,
         }
         step = {"type": "delay", "wait": 3, "unit": "days"}
-        node_id = _deploy_step(35925, "234068", step, client)
+        node_id, _ = _deploy_step(35925, "234068", step, client)
         client.create_node.assert_called_once_with("Delay", 35925, "234068")
         client.update_node.assert_called_once()
         update_args = client.update_node.call_args[0]
@@ -101,7 +101,7 @@ class TestDeployStep:
             "from_name": "A",
             "template_id": 9999,
         }
-        node_id = _deploy_step(1, "100", step, client)
+        node_id, _ = _deploy_step(1, "100", step, client)
         update_args = client.update_node.call_args[0][2]
         assert update_args["subject"] == "Hello!"
         assert update_args["template"] == 9999
@@ -111,7 +111,7 @@ class TestDeployStep:
     def test_webhook_creates_and_updates(self):
         client = MagicMock()
         client.create_node.return_value = {"id": "333", "nodeType": "Webhook", "workflow": 1, "siblings": []}
-        node_id = _deploy_step(1, "100", {"type": "webhook", "url": "https://x.com/hook", "method": "POST"}, client)
+        node_id, _ = _deploy_step(1, "100", {"type": "webhook", "url": "https://x.com/hook", "method": "POST"}, client)
         update_args = client.update_node.call_args[0][2]
         assert update_args["url"] == "https://x.com/hook"
         assert node_id == "333"
