@@ -37,6 +37,7 @@ class AutomationClient:
             },
             headers={"Referer": f"{BASE_URL}/login/"},
         )
+        resp.raise_for_status()
         if resp.text:
             try:
                 self._csrf_token = self._extract_csrf(resp.text)
@@ -69,3 +70,12 @@ class AutomationClient:
     def _delete(self, path: str) -> None:
         resp = self._client.delete(f"{BASE_URL}{path}", headers=self._headers())
         resp.raise_for_status()
+
+    def close(self) -> None:
+        self._client.close()
+
+    def __enter__(self) -> "AutomationClient":
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        self.close()

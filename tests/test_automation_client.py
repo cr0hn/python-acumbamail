@@ -39,3 +39,17 @@ class TestLogin:
     def test_extract_csrf_raises_if_missing(self, client):
         with pytest.raises(ValueError, match="CSRF token not found"):
             client._extract_csrf("<html>no token here</html>")
+
+    def test_login_updates_csrf_from_post_response(self, client, httpx_mock: HTTPXMock):
+        httpx_mock.add_response(
+            method="GET", url=f"{BASE}/login/",
+            text='<input name="csrfmiddlewaretoken" value="old_csrf">',
+            status_code=200,
+        )
+        httpx_mock.add_response(
+            method="POST", url=f"{BASE}/login/",
+            text='<input name="csrfmiddlewaretoken" value="new_csrf_456">',
+            status_code=200,
+        )
+        client.login()
+        assert client._csrf_token == "new_csrf_456"
