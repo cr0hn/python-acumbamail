@@ -102,14 +102,21 @@ components:
         hard_bounced_subscribers:
           type: integer
           example: 0
-        campaigns_sent:
+        spam_subscribers:
           type: integer
-          example: 5
+          example: 0
+        name:
+          type: string
+          example: "pruebas"
+          description: Name of the list
+        create_date:
+          type: string
+          example: "2025/06/26 15:03:34"
+          description: Date the list was created
       required:
         - total_subscribers
         - unsubscribed_subscribers
         - hard_bounced_subscribers
-        - campaigns_sent
 
     ListFieldsResponse:
       type: object

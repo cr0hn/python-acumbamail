@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026-05-18] - Tests de calidad y contract testing del OpenAPI spec
+
+### Added
+
+- `tests/test_openapi_structure.py`: 16 tests de validación estructural del YAML (sin red)
+  - Validación oficial OpenAPI 3.0.3, tags, paths, schemas, $ref internos, conteos
+- `tests/test_openapi_coverage.py`: 7 tests de cobertura spec vs SDK (sin red)
+  - Verifica que todos los endpoints del SDK están en el spec y viceversa
+  - Documenta endpoints SDK pendientes de spec (`getTemplatesByName`)
+- `tests/test_contracts.py`: 27 tests de contract testing real contra la API
+  - Listas, suscriptores, campañas, templates, webhooks, SMTP
+  - Marcados con `@pytest.mark.contract`, excluidos por defecto del `uv run pytest`
+- Configuración `pyproject.toml`: marker `contract` + `addopts = "-m 'not contract'"`
+
+### Fixed
+
+- `acumbamail-openapi.yaml`: corregido schema `ListStatsResponse`
+  - Eliminado campo `campaigns_sent` (la API real no lo devuelve)
+  - Añadidos campos reales: `spam_subscribers`, `name`, `create_date`
+  - `campaigns_sent` era requerido en el spec pero nunca aparece en respuestas reales
+
+### Discovered (API quirks documentados por contract testing)
+
+- `getCampaigns`: devuelve lista de dicts `{campaign_id_str: campaign_name}`, NO una lista de objetos con campo `id`
+- `getCampaignOpenersByBrowser` / `getCampaignOpenersByOs`: devuelven `[]` (lista vacía) cuando no hay openers, no `{}` (dict vacío)
+- `getTemplatesByName`: presente en el SDK pero sin documentar en el spec (pendiente)
+
 ## [2026-05-18] - OpenAPI spec completo de la API Acumbamail
 
 ### Added
