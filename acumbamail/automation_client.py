@@ -101,6 +101,20 @@ class AutomationClient:
     def deactivate_workflow(self, workflow_id: int) -> Automation:
         return self.update_workflow(workflow_id, active=False)
 
+    def create_node(self, node_type: str, workflow_id: int, source_id: str, siblings: Optional[list] = None) -> dict:
+        return self._post(f"/automation/api/{node_type.lower()}/", {
+            "sourceId": source_id,
+            "nodeType": node_type,
+            "workflow": str(workflow_id),
+            "siblings": siblings or [],
+        }).json()
+
+    def update_node(self, node_type: str, node_id: str, payload: dict) -> dict:
+        return self._put(f"/automation/api/{node_type.lower()}/{node_id}/", payload).json()
+
+    def delete_node(self, node_type: str, node_id: str) -> None:
+        self._delete(f"/automation/api/{node_type.lower()}/{node_id}/")
+
     def close(self) -> None:
         self._client.close()
 

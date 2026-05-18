@@ -162,3 +162,70 @@ class TestActivateWorkflow:
         patch_req = httpx_mock.get_requests()[-1]
         body = _json.loads(patch_req.content)
         assert body["active"] is False
+
+
+NODE_DELAY_RESPONSE = {
+    "id": "275481", "parent_id": 0, "workflow": 36215,
+    "nodeType": "Delay", "wait_time": 1, "wait_unit": 2, "siblings": [],
+}
+
+
+class TestNodeCRUD:
+    def test_create_node_posts_correct_payload(self, client, httpx_mock: HTTPXMock):
+        import json as _json
+        mock_login(httpx_mock)
+        httpx_mock.add_response(
+            method="POST",
+            url=f"{BASE}/automation/api/delay/",
+            json=NODE_DELAY_RESPONSE,
+            status_code=201,
+        )
+        client.login()
+        result = client.create_node("Delay", 36215, "235966")
+        post_req = httpx_mock.get_requests()[-1]
+        body = _json.loads(post_req.content)
+        assert body["sourceId"] == "235966"
+        assert body["nodeType"] == "Delay"
+        assert body["workflow"] == "36215"
+        assert result["id"] == "275481"
+
+    def test_create_node_uses_lowercase_nodetype_in_url(self, client, httpx_mock: HTTPXMock):
+        mock_login(httpx_mock)
+        httpx_mock.add_response(
+            method="POST",
+            url=f"{BASE}/automation/api/sendtemplate/",
+            json={"id": "999", "nodeType": "SendTemplate", "workflow": 1, "siblings": []},
+            status_code=201,
+        )
+        client.login()
+        client.create_node("SendTemplate", 1, "100")
+        post_req = httpx_mock.get_requests()[-1]
+        assert "/automation/api/sendtemplate/" in str(post_req.url)
+
+    def test_update_node_sends_put(self, client, httpx_mock: HTTPXMock):
+        import json as _json
+        mock_login(httpx_mock)
+        httpx_mock.add_response(
+            method="PUT",
+            url=f"{BASE}/automation/api/delay/275481/",
+            json={**NODE_DELAY_RESPONSE, "wait_time": 3},
+        )
+        client.login()
+        result = client.update_node("Delay", "275481", {**NODE_DELAY_RESPONSE, "wait_time": 3})
+        put_req = httpx_mock.get_requests()[-1]
+        body = _json.loads(put_req.content)
+        assert body["wait_time"] == 3
+        assert result["wait_time"] == 3
+
+    def test_delete_node_sends_delete(self, client, httpx_mock: HTTPXMock):
+        mock_login(httpx_mock)
+        httpx_mock.add_response(
+            method="DELETE",
+            url=f"{BASE}/automation/api/delay/275481/",
+            status_code=204,
+        )
+        client.login()
+        client.delete_node("Delay", "275481")
+        delete_req = httpx_mock.get_requests()[-1]
+        assert delete_req.method == "DELETE"
+        assert "/automation/api/delay/275481/" in str(delete_req.url)
