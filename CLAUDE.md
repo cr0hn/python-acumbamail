@@ -61,6 +61,35 @@ uv run pytest tests/test_aclient_new_methods.py -v
 
 Tests con `pytest-httpx` — mocking de httpx. Para el cliente async se usa `pytest.mark.asyncio` con `asyncio_mode = "auto"` (configurado en `pyproject.toml`).
 
+## CLI
+
+Instalado automáticamente con el paquete como comando `acumbamail`:
+
+```bash
+export ACUMBAMAIL_TOKEN=<tu_token>
+
+# Listas
+acumbamail lists list
+acumbamail lists create --name "Mi Lista" --sender-email sender@x.com
+acumbamail lists stats --list-id 123
+
+# Suscriptores
+acumbamail subscribers list --list-id 123
+acumbamail subscribers add --list-id 123 --email x@x.com
+acumbamail subscribers search --query x@x.com
+acumbamail subscribers batch-add --list-id 123 --file subs.json
+
+# Campañas
+acumbamail campaigns list
+acumbamail campaigns stats --campaign-id 456
+
+# Webhooks
+acumbamail webhooks smtp-get
+acumbamail webhooks list-config --list-id 123 --url https://... --subscribes --active
+```
+
+O con flag: `acumbamail --token <token> lists list`. Salida siempre JSON a stdout. Errores a stderr con exit code 1.
+
 ## Test Token & List
 
 - Auth token for testing: `YOUR_TOKEN_HERE`
