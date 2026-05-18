@@ -244,14 +244,24 @@ Use `--token <token>` as an alternative to `ACUMBAMAIL_TOKEN`. Every command acc
 
 ### Automations as Code
 
-Define email sequences in YAML and deploy them like infrastructure. Idempotent: re-deploying a workflow with the same `name` replaces it in place.
+Most email platforms treat automations as a GUI-only feature: you click through a visual editor, and the result lives exclusively in their cloud — invisible to Git, impossible to review in a PR, painful to replicate across accounts.
+
+**acumbamail** takes a different approach. Your automation workflows live as YAML files in your repository, right next to your code. You deploy them with a single command, the same way you'd apply a Terraform plan or a Kubernetes manifest.
+
+**What you get:**
+
+- **Version control** — every change to a workflow goes through a commit. `git diff` shows exactly what changed between the old and new sequence.
+- **Code review** — workflows are PR-reviewable. Your team can catch logic errors before a broken sequence goes out to thousands of subscribers.
+- **Reproducibility** — recreate any automation on a new account or staging environment in seconds, from a file.
+- **Idempotency** — deploying the same file twice is always safe. Acumbamail identifies workflows by `name`, replaces in place, and reports `"action": "updated"`.
+- **Backup and recovery** — `acumbamail automations export` pulls any existing workflow back to YAML. Even automations built in the GUI can be exported, put under version control, and managed from that point on.
 
 ```yaml
-# welcome-sequence.yaml
+# welcome-sequence.yaml  ← lives in your repo, reviewed in PRs
 name: welcome-sequence
 trigger:
   list_id: 1138335
-  event: subscriber_added
+  event: subscriber_added   # fires when someone joins the list
 
 steps:
   - type: email_template
@@ -270,6 +280,7 @@ steps:
     wait: 7
     unit: days
 
+  # Branch on engagement: reward active subscribers, re-engage quiet ones
   - type: condition
     on_match:
       - type: email_template
@@ -282,19 +293,22 @@ steps:
 ```
 
 ```console
-$ acumbamail automations login        # opens Chrome, saves session (~30 days)
+$ acumbamail automations login          # one-time: opens Chrome, saves session for 30 days
 $ acumbamail automations deploy welcome-sequence.yaml
 {"workflow_id": 36215, "action": "created", "active": false}
 
-$ acumbamail automations deploy welcome-sequence.yaml   # re-run: idempotent
+$ # Edit the YAML, redeploy — safe and idempotent
+$ acumbamail automations deploy welcome-sequence.yaml
 {"workflow_id": 36215, "action": "updated", "active": false}
 
-$ acumbamail automations export --name "welcome-sequence" > backup.yaml
+$ # Pull an existing automation back to YAML (even ones built in the GUI)
+$ acumbamail automations export --name "welcome-sequence" > welcome-sequence.yaml
+
 $ acumbamail automations list | jq '[.[] | select(.active == true)]'
 ```
 
 > [!NOTE]
-> Automations use Acumbamail's web session (not the API token). Run `acumbamail automations login` once to authenticate — the session lasts 30 days.
+> Automations use Acumbamail's web session (not the API token). Run `acumbamail automations login` once — the session lasts 30 days.
 
 Supported step types: `email_template`, `delay`, `condition`, `until`, `webhook`, `update_field`, `move_to`.
 
