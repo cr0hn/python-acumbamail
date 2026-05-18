@@ -485,3 +485,79 @@ class TestConfigListWebhook:
         assert body["subscribes"] == 1
         assert body["unsubscribes"] == 1
         assert body["active"] == 0
+
+
+# ---------------------------------------------------------------------------
+# New parameter tests
+# ---------------------------------------------------------------------------
+
+class TestAddSubscriberNewParams:
+    def test_sends_double_optin_flag(self, client, httpx_mock: HTTPXMock):
+        httpx_mock.add_response(url=api_url("addSubscriber"), json=123, status_code=201)
+        client.add_subscriber("x@test.com", 123, double_optin=True)
+        body = json.loads(httpx_mock.get_requests()[0].content)
+        assert body["double_optin"] == 1
+
+    def test_double_optin_defaults_to_false(self, client, httpx_mock: HTTPXMock):
+        httpx_mock.add_response(url=api_url("addSubscriber"), json=123, status_code=201)
+        client.add_subscriber("x@test.com", 123)
+        body = json.loads(httpx_mock.get_requests()[0].content)
+        assert body["double_optin"] == 0
+
+    def test_sends_update_subscriber_flag(self, client, httpx_mock: HTTPXMock):
+        httpx_mock.add_response(url=api_url("addSubscriber"), json=123, status_code=201)
+        client.add_subscriber("x@test.com", 123, update_subscriber=True)
+        body = json.loads(httpx_mock.get_requests()[0].content)
+        assert body["update_subscriber"] == 1
+
+    def test_update_subscriber_defaults_to_false(self, client, httpx_mock: HTTPXMock):
+        httpx_mock.add_response(url=api_url("addSubscriber"), json=123, status_code=201)
+        client.add_subscriber("x@test.com", 123)
+        body = json.loads(httpx_mock.get_requests()[0].content)
+        assert body["update_subscriber"] == 0
+
+
+class TestGetSubscribersNewParams:
+    def test_sends_block_index(self, client, httpx_mock: HTTPXMock):
+        httpx_mock.add_response(url=api_url("getSubscribers"), json={})
+        client.get_subscribers(123, block_index=2)
+        body = json.loads(httpx_mock.get_requests()[0].content)
+        assert body["block_index"] == 2
+
+    def test_block_index_defaults_to_zero(self, client, httpx_mock: HTTPXMock):
+        httpx_mock.add_response(url=api_url("getSubscribers"), json={})
+        client.get_subscribers(123)
+        body = json.loads(httpx_mock.get_requests()[0].content)
+        assert body["block_index"] == 0
+
+    def test_sends_all_fields_flag(self, client, httpx_mock: HTTPXMock):
+        httpx_mock.add_response(url=api_url("getSubscribers"), json={})
+        client.get_subscribers(123, all_fields=True)
+        body = json.loads(httpx_mock.get_requests()[0].content)
+        assert body["all_fields"] == 1
+
+    def test_all_fields_defaults_to_false(self, client, httpx_mock: HTTPXMock):
+        httpx_mock.add_response(url=api_url("getSubscribers"), json={})
+        client.get_subscribers(123)
+        body = json.loads(httpx_mock.get_requests()[0].content)
+        assert body["all_fields"] == 0
+
+    def test_sends_complete_json_flag(self, client, httpx_mock: HTTPXMock):
+        httpx_mock.add_response(url=api_url("getSubscribers"), json={})
+        client.get_subscribers(123, complete_json=True)
+        body = json.loads(httpx_mock.get_requests()[0].content)
+        assert body["complete_json"] == 1
+
+
+class TestGetListSubsStatsNewParams:
+    def test_sends_block_index(self, client, httpx_mock: HTTPXMock):
+        httpx_mock.add_response(url=api_url("getListSubsStats"), json={})
+        client.get_list_subs_stats(123, block_index=3)
+        body = json.loads(httpx_mock.get_requests()[0].content)
+        assert body["block_index"] == 3
+
+    def test_block_index_defaults_to_zero(self, client, httpx_mock: HTTPXMock):
+        httpx_mock.add_response(url=api_url("getListSubsStats"), json={})
+        client.get_list_subs_stats(123)
+        body = json.loads(httpx_mock.get_requests()[0].content)
+        assert body["block_index"] == 0

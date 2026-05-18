@@ -465,63 +465,53 @@ class AsyncAcumbamailClient:
             description=description.strip()
         )
 
-    async def get_subscribers(self, list_id: int) -> List[Subscriber]:
+    async def get_subscribers(
+        self,
+        list_id: int,
+        block_index: int = 0,
+        all_fields: bool = False,
+        complete_json: bool = False,
+    ) -> List[Subscriber]:
         """
         Retrieve all subscribers from a specific mailing list.
-        
-        This method fetches all active subscribers from the specified mailing
-        list, including their email addresses, custom fields, and subscription
-        status information.
-        
+
         Args:
             list_id (int): The unique identifier of the mailing list to fetch
-                subscribers from. This ID can be obtained from the get_lists()
-                method or when creating a new list.
-            
+                subscribers from.
+            block_index (int, optional): Pagination block index. Defaults to 0.
+            all_fields (bool, optional): Whether to return all subscriber fields.
+                Defaults to False.
+            complete_json (bool, optional): Whether to return the complete JSON
+                response. Defaults to False.
+
         Returns:
-            List[Subscriber]: A list of Subscriber objects, each containing:
-                - Email address
-                - List ID and subscription status
-                - Custom fields and merge data
-                - Subscription timestamp
-                - Other subscriber metadata
-        
+            List[Subscriber]: A list of Subscriber objects.
+
         Raises:
             AcumbamailAPIError: If the API request fails or the list doesn't exist
             AcumbamailError: For other errors during the request
-            
-        Example:
-            >>> # Get subscribers from a specific list
-            >>> subscribers = await client.get_subscribers(list_id=12345)
-            >>> print(f"Found {len(subscribers)} subscribers")
-            
-            >>> # Process subscriber information
-            >>> for subscriber in subscribers:
-            ...     print(f"Email: {subscriber.email}")
-            ...     print(f"Active: {subscriber.is_active}")
-            ...     print(f"Fields: {subscriber.fields}")
-            ...     if subscriber.subscribed_at:
-            ...         print(f"Subscribed: {subscriber.subscribed_at}")
-            
-            >>> # Filter subscribers by custom fields
-            >>> premium_subscribers = [
-            ...     s for s in subscribers 
-            ...     if s.fields.get('membership_type') == 'premium'
-            ... ]
-            >>> print(f"Premium subscribers: {len(premium_subscribers)}")
-        
-        Note:
-            This method returns all subscribers in a single API call. For very
-            large lists, consider implementing pagination or filtering if needed.
         """
         await self._ensure_client()
-        response = await self._call_api("getSubscribers", {"list_id": list_id})
+        payload = {
+            "list_id": list_id,
+            "block_index": block_index,
+            "all_fields": 1 if all_fields else 0,
+            "complete_json": 1 if complete_json else 0,
+        }
+        response = await self._call_api("getSubscribers", payload)
         return [
-            Subscriber.from_api({**data, 'list_id': list_id, 'email': email})
-            for email, data in response.items()
+            Subscriber.from_api({**sub_data, 'list_id': list_id, 'email': email})
+            for email, sub_data in response.items()
         ]
 
-    async def add_subscriber(self, email: str, list_id: int, fields: Dict[str, Any] = None) -> Subscriber:
+    async def add_subscriber(
+        self,
+        email: str,
+        list_id: int,
+        fields: Dict[str, Any] = None,
+        double_optin: bool = False,
+        update_subscriber: bool = False,
+    ) -> Subscriber:
         """
         Add a new subscriber to a mailing list.
         
@@ -600,15 +590,14 @@ class AsyncAcumbamailClient:
         await self._ensure_client()
         if not email or '@' not in email:
             raise AcumbamailValidationError("Invalid email address format")
-            
+
         data = {
             "list_id": list_id,
-            "merge_fields": {
-                "email": email.lower().strip(),
-                **(fields or {})
-            }
+            "merge_fields": {"email": email.lower().strip(), **(fields or {})},
+            "double_optin": 1 if double_optin else 0,
+            "update_subscriber": 1 if update_subscriber else 0,
         }
-        
+
         await self._call_api("addSubscriber", data)
         return Subscriber(email=email.lower().strip(), list_id=list_id, fields=fields)
 
@@ -1088,18 +1077,19 @@ class AsyncAcumbamailClient:
         await self._ensure_client()
         return await self._call_api("getListSegments", {"list_id": list_id})
 
-    async def get_list_subs_stats(self, list_id: int) -> Dict[str, int]:
+    async def get_list_subs_stats(self, list_id: int, block_index: int = 0) -> Dict[str, int]:
         """
         Get detailed subscriber statistics for a mailing list.
-        
+
         Args:
             list_id (int): ID of the mailing list
-            
+            block_index (int, optional): Pagination block index. Defaults to 0.
+
         Returns:
             Dict[str, int]: Detailed subscriber statistics
         """
         await self._ensure_client()
-        return await self._call_api("getListSubsStats", {"list_id": list_id})
+        return await self._call_api("getListSubsStats", {"list_id": list_id, "block_index": block_index})
 
     async def get_merge_fields(self, list_id: int) -> List[Dict[str, Any]]:
         """
