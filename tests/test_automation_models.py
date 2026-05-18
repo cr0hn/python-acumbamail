@@ -21,6 +21,17 @@ class TestAutomationNode:
         assert node.siblings == []
         assert node.extra["workflow_list"] == 1140700
 
+    def test_from_api_parent_id_null(self):
+        data = {
+            "id": "234068",
+            "parent_id": None,
+            "workflow": 35925,
+            "nodeType": "Trigger",
+            "siblings": [],
+        }
+        node = AutomationNode.from_api(data)
+        assert node.parent_id is None
+
     def test_from_api_recursive_siblings(self):
         data = {
             "id": "100",
