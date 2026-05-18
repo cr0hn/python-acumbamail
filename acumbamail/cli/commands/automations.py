@@ -29,7 +29,9 @@ def login_automation():
     profile_dir = Path.home() / ".config" / "acumbamail" / "chrome_profile"
     profile_dir.mkdir(parents=True, exist_ok=True)
 
-    typer.echo("Abriendo Chrome... Inicia sesión en Acumbamail.")
+    typer.echo("Abriendo Chrome...")
+    typer.echo("→ Inicia sesión en Acumbamail en la ventana que se abre.")
+    typer.echo("→ Espera a que cargue la página principal (puede tardar ~20s en detectarse).")
     with sync_playwright() as p:
         context = p.chromium.launch_persistent_context(
             user_data_dir=str(profile_dir),
