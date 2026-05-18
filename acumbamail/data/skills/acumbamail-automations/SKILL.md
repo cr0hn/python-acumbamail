@@ -9,20 +9,31 @@ Manage Acumbamail email automation workflows as code. Define sequences of emails
 
 ## Authentication
 
-Automation commands use **web session auth** (NOT the API token). Set:
+Automation commands require a **browser-based login** (NOT the API token). The automation API uses Django session auth and Acumbamail's login page blocks programmatic requests via bot detection.
 
+**First-time setup (and every ~30 days when session expires):**
 ```bash
-export ACUMBAMAIL_EMAIL=user@example.com
-export ACUMBAMAIL_PASSWORD=your_password
+acumbamail automations login
+# → Opens Chrome, you log in visually
+# → Session saved to ~/.config/acumbamail/session.json (valid 30 days)
 ```
 
-Or pass `--email`/`--password` per command.
+After login, all other commands work without credentials:
+```bash
+acumbamail automations list
+acumbamail automations deploy workflow.yaml
+```
 
-> The public `ACUMBAMAIL_TOKEN` does **not** work for automations. The automation API is a separate internal API at `https://acumbamail.com/automation/api/` that requires a Django session.
+> **Why no email/password flag?** Acumbamail blocks programmatic login via httpx (bot detection on the login page). The CLI uses Playwright with a dedicated Chrome profile (`~/.config/acumbamail/chrome_profile/`) to open a real browser for login.
+
+> **Session lifetime**: 30 days. CSRF tokens are NOT needed to keep the session alive — they're only required for write operations. The session expires based on `SESSION_COOKIE_AGE` set by Acumbamail.
 
 ## CLI Commands
 
 ```bash
+# Login (required first time and every ~30 days)
+acumbamail automations login
+
 # List all automations
 acumbamail automations list
 
@@ -50,9 +61,8 @@ trigger:
 steps:
   - type: email_template
     subject: "¡Bienvenido!"
-    from_email: hello@example.com
-    from_name: Mi empresa
     template_id: 8986619
+    # Note: from_email/from_name use account defaults unless you have a verified sender
 ```
 
 ### Full schema reference
@@ -72,8 +82,9 @@ steps:
     name: <string>                # optional custom name
     subject: <string>             # required
     preheader: <string>           # optional preview text
-    from_email: <string>          # required
-    from_name: <string>           # required
+    from_email: <string>          # optional — MUST be a verified sender in Acumbamail
+                                  # If omitted or not verified, account default is used
+    from_name: <string>           # optional — same caveat as from_email
     template_id: <int>            # required — Acumbamail template ID
     track_urls: true              # optional, default true
     track_analytics: true         # optional, default true
@@ -147,15 +158,17 @@ https://acumbamail.com/automation/api/
 
 The automation API uses Django session authentication. The public API token does **not** work.
 
-**Login flow:**
-1. `GET /login/` → parse `<input name="csrfmiddlewaretoken">` from HTML response
-2. `POST /login/` with form body:
-   ```
-   username=user@example.com&password=secret&csrfmiddlewaretoken=<csrf>
-   Content-Type: application/x-www-form-urlencoded
-   ```
-3. Session cookie (`sessionid`) is set in the response — include it in all subsequent requests
-4. Re-extract CSRF from any automation page for write operations, add as `X-CSRFToken` header
+**Login form quirks (discovered via reverse engineering):**
+- Form POSTs to `/login/2fa/` (not `/login/`)
+- Field names are `auth-username` and `auth-password` (not `username`/`password`)
+- Requires hidden field `login_view-current_step: auth`
+- **Programmatic login via httpx/requests does NOT work** — Acumbamail's login page returns 403 to non-browser HTTP clients. Use `acumbamail automations login` (Playwright) instead.
+
+**After login, include in all requests:**
+- Cookie: `sessionid=<value>; csrftoken=<value>; backend=py3`
+- Write requests additionally need: `X-CSRFToken: <csrftoken>`, `Origin: https://acumbamail.com`, `Referer: https://acumbamail.com/automation/workflow-list`
+
+**Session lifetime:** 30 days (`SESSION_COOKIE_AGE`). CSRF is NOT needed to keep the session alive — only for write operation validation. Session only expires if you log out or 30 days pass.
 
 ### Workflow endpoints
 
@@ -183,10 +196,20 @@ DELETE /automation/api/{nodeType}/{id}/    → delete node → 204
 {
   "sourceId": "<parentNodeId>",
   "nodeType": "Delay",
-  "workflow": 36215,
+  "workflow": "36215",
   "siblings": []
 }
 ```
+
+> **Critical quirk:** `sourceId` alone does NOT establish the parent-child link. After creating a node, you MUST also PUT the parent node with the new child in its `siblings` array:
+> ```
+> PUT /automation/api/trigger/235966/
+> Body: {...trigger_data, "siblings": ["275542"]}
+> ```
+
+> **SendTemplate quirk:** The `template` (template ID) field is **required at CREATE time**, not just at update. Include it in the POST body.
+
+> **from_email quirk:** The `from_email` field in SendTemplate PUT is strictly validated against Acumbamail's verified sender list. If the email is not registered as a verified sender, the PUT returns 400. Omit `from_email` in the PUT to use the account default.
 
 ### Node types reference
 
@@ -270,14 +293,23 @@ The full workflow (`GET /automation/api/workflow/{id}/`) returns a recursive tre
 
 When `acumbamail automations deploy workflow.yaml` runs:
 
-1. Login with email + password → get session
+1. Load session from `~/.config/acumbamail/session.json`
 2. `GET /basic-workflow/` → find workflow matching `name`
-3. **Not found** → `POST /workflow/` → build node tree sequentially:
-   - Start with Trigger node (the entry point)
-   - For each step in YAML: `POST /automation/api/{nodeType}/` with `sourceId` = previous node's ID
-   - For `condition` type: create `Fork` node first, then two `Condition` children
-4. **Found** → `GET /workflow/{id}/` → diff existing tree vs desired YAML → apply changes
+3. **Not found** → `POST /workflow/` → build node tree:
+   - Update Trigger settings via PUT
+   - For each step: `POST /automation/api/{nodeType}/` then `PUT` with settings
+   - After each node creation: `PUT` the parent to add the new node to its `siblings` array
+   - For `email_template`: include `template` ID in the POST create body
+   - For `condition`: create `Fork` → two `Condition` children, each with their own sub-tree
+4. **Found** → delete all nodes except Trigger → rebuild tree from scratch
 5. Output: `{"workflow_id": 36215, "action": "created|updated", "active": false}`
+
+**Node linking sequence (3 calls per linear node):**
+```
+POST /automation/api/delay/          → 201 {id: "new_delay_id", ...}
+PUT  /automation/api/delay/{id}/     → 200 (update wait_time, wait_unit, etc.)
+PUT  /automation/api/trigger/{id}/   → 200 (add new_delay_id to trigger.siblings)
+```
 
 ---
 
@@ -286,6 +318,10 @@ When `acumbamail automations deploy workflow.yaml` runs:
 ### Deploy a welcome sequence
 
 ```bash
+# First, login (opens Chrome for you to log in)
+acumbamail automations login
+
+# Create the YAML
 cat > welcome.yaml << 'EOF'
 name: bienvenida-newsletter
 trigger:
@@ -294,21 +330,16 @@ trigger:
 steps:
   - type: email_template
     subject: "¡Bienvenido a la newsletter!"
-    from_email: hola@example.com
-    from_name: Mi Empresa
     template_id: 123456
+    # from_email uses account default (must be a verified sender if specified)
   - type: delay
     wait: 3
     unit: days
   - type: email_template
     subject: "¿Cómo te va?"
-    from_email: hola@example.com
-    from_name: Mi Empresa
     template_id: 123457
 EOF
 
-export ACUMBAMAIL_EMAIL=user@example.com
-export ACUMBAMAIL_PASSWORD=secret
 acumbamail automations deploy welcome.yaml
 ```
 
