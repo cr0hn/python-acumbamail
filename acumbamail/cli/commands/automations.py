@@ -51,16 +51,19 @@ def login_automation():
             context.close()
             raise SystemExit(1)
 
-        # Verificar que la sesión funciona realmente contra la API
+        # Verificar sesión con fetch desde la página ya autenticada
         typer.echo("Login detectado, verificando sesión...")
-        api_page = context.new_page()
-        api_page.goto("https://acumbamail.com/automation/api/basic-workflow/")
-        api_ok = '"id"' in api_page.content()
+        result = page.evaluate("""
+            async () => {
+                const r = await fetch('/automation/api/basic-workflow/', {credentials: 'include'});
+                return r.status;
+            }
+        """)
         all_cookies = {c["name"]: c["value"] for c in context.cookies("https://acumbamail.com")}
         context.close()
 
-    if not api_ok:
-        typer.echo("Error: el login no se completó correctamente. Inténtalo de nuevo.", err=True)
+    if result != 200:
+        typer.echo(f"Error: la sesión no es válida (API devolvió {result}). Inténtalo de nuevo.", err=True)
         raise SystemExit(1)
 
     sessionid = all_cookies.get("sessionid")
