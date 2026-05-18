@@ -27,7 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- `utils.py`: eliminadas 8 funciones dead code (`validate_email`, `format_date`, `generate_subscriber_hash`, `clean_html`, `merge_subscriber_fields`, `parse_api_response`, `format_campaign_content`, `validate_campaign_data`, `format_subscriber_data`)
+- `utils.py`: eliminadas 8 funciones dead code
+
+## [2026-05-18] - Tests para métodos originales del SDK (pre-sesión)
+
+### Added
+
+- `tests/test_client_original.py`: 85 tests del cliente síncrono (get_lists, create_list, get_subscribers, add_subscriber, delete_subscriber, create_campaign, send_single_email, get_templates, create_template, y más)
+- `tests/test_aclient_original.py`: 80 tests del cliente asíncrono (espejo del síncrono)
 
 ## [2026-05-18] - Tests de calidad y contract testing del OpenAPI spec
 
