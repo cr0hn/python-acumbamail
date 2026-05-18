@@ -1,6 +1,6 @@
 # Acumbamail SDK for Python
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyPI](https://img.shields.io/pypi/v/acumbamail)](https://pypi.org/project/acumbamail/)
 
@@ -72,11 +72,20 @@ If you sign up using this link, you'll get 15% off.
 - **Rate Limiting**: Built-in rate limit handling with exponential backoff
 - **Data Models**: Structured data models for all API responses
 - **Documentation**: Extensive docstrings and examples
+- **CLI for scripting and automation**: Full-featured `acumbamail` command-line tool
+- **Webhook configuration**: SMTP and list webhooks
+- **Batch subscriber operations**: Add or delete subscribers in bulk
+- **Subscriber search and details**: Find subscribers across lists
+- **Template duplication**: Clone existing templates
+- **Inactive subscriber tracking**: Identify and manage inactive subscribers
+- **SMTP transactional emails**: Send individual and certified transactional emails
 
 
 ## Quick Start
 
 ### Installation
+
+Requires Python 3.13+.
 
 ```bash
 pip install acumbamail
@@ -116,6 +125,42 @@ campaign = client.create_campaign(
 )
 ```
 
+
+## CLI
+
+The package includes the `acumbamail` CLI for scripting and automation:
+
+```bash
+export ACUMBAMAIL_TOKEN=your-token
+
+# Lists
+acumbamail lists list
+acumbamail lists create --name "Newsletter" --sender-email sender@example.com
+acumbamail lists stats --list-id 123
+
+# Subscribers
+acumbamail subscribers list --list-id 123
+acumbamail subscribers add --list-id 123 --email user@example.com
+acumbamail subscribers search --query user@example.com
+acumbamail subscribers batch-add --list-id 123 --file subscribers.json
+
+# Campaigns
+acumbamail campaigns list
+acumbamail campaigns stats --campaign-id 456
+
+# Webhooks
+acumbamail webhooks smtp-get
+acumbamail webhooks list-config --list-id 123 --url https://myapp.com/wh --subscribes --active
+```
+
+All output is JSON. Use `--token` flag or `ACUMBAMAIL_TOKEN` env var for authentication.
+
+### Install Claude Code skills
+
+```bash
+acumbamail install-skills      # local (.claude/skills/)
+acumbamail install-skills -g   # global (~/.claude/skills/)
+```
 
 ## Postman Collection
 
@@ -566,22 +611,50 @@ class AsyncAcumbamailClient:
 
 - `get_lists()` - Retrieve all mailing lists
 - `create_list(name, description)` - Create a new mailing list
+- `delete_list(list_id)` - Delete a mailing list
 - `get_list_stats(list_id)` - Get list statistics
 - `get_list_fields(list_id)` - Get custom fields
 - `get_list_segments(list_id)` - Get list segments
+- `get_fields(list_id)` - Get field definitions as a dict
+- `get_forms(list_id)` - Get subscription forms for a list
+- `add_merge_tag(list_id, field_name, field_type)` - Add a custom merge tag field
 
 #### Subscriber Management
 
 - `get_subscribers(list_id)` - Get all subscribers
 - `add_subscriber(email, list_id, fields)` - Add a subscriber
 - `delete_subscriber(email, list_id)` - Remove a subscriber
+- `unsubscribe_subscriber(list_id, email)` - Unsubscribe (not delete) a subscriber
+- `batch_add_subscribers(list_id, subscribers_data, update_subscriber=False)` - Add subscribers in bulk
+- `batch_delete_subscribers(list_id, email_list)` - Delete subscribers in bulk
+- `delete_all_subscribers(list_id)` - Remove all subscribers from a list
+- `get_subscriber_details(list_id, subscriber_email)` - Get full subscriber details
+- `search_subscriber(subscriber)` - Search for a subscriber across all lists
+- `get_inactive_subscribers(date_from, date_to, full_info=False)` - Get inactive subscribers by date range
 
 #### Campaign Management
 
 - `create_campaign(name, subject, content, list_ids, ...)` - Create a campaign
+- `send_template_campaign(name, subject, template_id, list_ids, ...)` - Send a campaign using a template
 - `get_campaigns(complete_json)` - Get all campaigns
-- `send_single_email(to_email, subject, content, ...)` - Send single email
+- `send_single_email(to_email, subject, content, ...)` - Send single transactional email
 - `create_template(template_name, html_content, subject, custom_category)` - Create email template
+- `duplicate_template(template_name, origin_template_id)` - Duplicate an existing template
+- `get_campaign_openers_by_countries(campaign_id)` - Get opener statistics grouped by country
+- `get_smtp_credits()` - Get remaining SMTP sending credits
+
+#### SMTP Transactional Emails
+
+- `send_emails(messages)` - Send a batch of transactional emails via SMTP
+- `send_certified_email(to_email, subject, content, ...)` - Send a certified transactional email
+- `get_email_status(email_key)` - Get delivery status for a sent transactional email
+
+#### Webhooks
+
+- `get_smtp_webhook()` - Get current SMTP webhook configuration
+- `config_smtp_webhook(...)` - Configure SMTP webhook
+- `get_list_webhook(list_id)` - Get webhook configuration for a list
+- `config_list_webhook(list_id, ...)` - Configure webhook for a list
 
 ##### Template Management
 
@@ -635,6 +708,12 @@ The `create_campaign` method supports several parameters for customization:
 - `get_campaign_clicks(campaign_id)` - Get click statistics
 - `get_campaign_openers(campaign_id)` - Get opener information
 - `get_campaign_soft_bounces(campaign_id)` - Get bounce information
+
+## OpenAPI Specification
+
+A complete OpenAPI 3.0.3 specification is available at `acumbamail-openapi.yaml` in the repository root. It covers all 48 endpoints with request/response schemas, examples, and documented quirks.
+
+A Postman collection is also available at `Acumbamail.postman_collection.json`.
 
 ## Error Handling
 

@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026-05-18] - Migrar CI/CD de Poetry a uv con Trusted Publishing; actualizar README
+
+### Changed
+
+- `.github/workflows/publish-to-pypi.yaml`: reescrito para usar `uv` en lugar de Poetry
+  - Separado en dos jobs: `test` (ejecuta `uv run pytest -m "not contract"`) y `publish`
+  - `publish` usa Trusted Publishing (OIDC) via `pypa/gh-action-pypi-publish@release/v1`
+  - Actualizado Python de 3.11 a 3.13
+  - Instalación de uv via `astral-sh/setup-uv@v4`
+- `README.md`:
+  - Badge y texto de instalación actualizados: Python 3.13+ requerido (antes 3.11+)
+  - Nueva sección **CLI** con comandos de listas, suscriptores, campañas, webhooks e `install-skills`
+  - Sección **Features** ampliada: CLI, webhooks, batch operations, subscriber search, template duplication, inactive subscribers, SMTP transactional emails
+  - Sección **Core Methods** ampliada con 25+ métodos nuevos: `add_merge_tag`, `batch_add_subscribers`, `batch_delete_subscribers`, `delete_all_subscribers`, `delete_list`, `get_smtp_credits`, `get_fields`, `get_forms`, `get_inactive_subscribers`, `get_subscriber_details`, `search_subscriber`, `unsubscribe_subscriber`, `send_template_campaign`, `duplicate_template`, `get_campaign_openers_by_countries`, `send_emails`, `send_certified_email`, `get_email_status`, `get_smtp_webhook`, `config_smtp_webhook`, `get_list_webhook`, `config_list_webhook`
+  - Nueva sección **OpenAPI Specification** que referencia `acumbamail-openapi.yaml` y `Acumbamail.postman_collection.json`
+
 ## [2026-05-18] - Tests de calidad y contract testing del OpenAPI spec
 
 ### Added
