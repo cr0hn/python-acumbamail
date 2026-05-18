@@ -78,11 +78,14 @@ class AutomationClient:
         return Automation.from_full_api(self._get(f"/automation/api/workflow/{workflow_id}/").json())
 
     def create_workflow(self, name: str, description: Optional[str] = None) -> Automation:
-        return Automation.from_full_api(
-            self._post("/automation/api/workflow/", {"name": name, "description": description}).json()
-        )
+        payload: dict = {"name": name}
+        if description is not None:
+            payload["description"] = description
+        return Automation.from_full_api(self._post("/automation/api/workflow/", payload).json())
 
     def update_workflow(self, workflow_id: int, *, name: Optional[str] = None, active: Optional[bool] = None) -> Automation:
+        if name is None and active is None:
+            raise ValueError("At least one of 'name' or 'active' must be provided")
         payload: dict = {}
         if name is not None:
             payload["name"] = name

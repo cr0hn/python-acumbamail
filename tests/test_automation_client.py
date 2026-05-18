@@ -120,7 +120,7 @@ class TestCreateWorkflow:
         client.create_workflow("test")
         post_req = httpx_mock.get_requests()[-1]
         body = _json.loads(post_req.content)
-        assert body["description"] is None
+        assert "description" not in body
 
 
 class TestDeleteWorkflow:
@@ -128,9 +128,10 @@ class TestDeleteWorkflow:
         mock_login(httpx_mock)
         httpx_mock.add_response(method="DELETE", url=f"{BASE}/automation/api/workflow/35925/", status_code=204)
         client.login()
-        client.delete_workflow(35925)
+        result = client.delete_workflow(35925)
         delete_req = httpx_mock.get_requests()[-1]
         assert delete_req.method == "DELETE"
+        assert result is None
 
 
 class TestActivateWorkflow:
@@ -162,6 +163,12 @@ class TestActivateWorkflow:
         patch_req = httpx_mock.get_requests()[-1]
         body = _json.loads(patch_req.content)
         assert body["active"] is False
+
+
+class TestUpdateWorkflow:
+    def test_raises_when_no_kwargs(self, client):
+        with pytest.raises(ValueError, match="At least one"):
+            client.update_workflow(35925)
 
 
 NODE_DELAY_RESPONSE = {
