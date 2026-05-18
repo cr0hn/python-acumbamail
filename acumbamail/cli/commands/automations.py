@@ -44,29 +44,37 @@ def login_automation():
         page.goto("https://acumbamail.com/login/")
         page.bring_to_front()
         try:
-            # Espera hasta que el usuario salga de la página de login
-            page.wait_for_function(
-                "!window.location.href.includes('/login')",
-                timeout=300_000,
-            )
+            # Espera hasta que el usuario llegue a la app (no solo salga de /login)
+            page.wait_for_url("**/app/**", timeout=300_000)
         except Exception:
             typer.echo("Tiempo de espera agotado o login cancelado.", err=True)
             context.close()
             raise SystemExit(1)
 
-        cookies = {c["name"]: c["value"] for c in context.cookies("https://acumbamail.com")}
+        # Verificar que la sesión funciona realmente contra la API
+        typer.echo("Login detectado, verificando sesión...")
+        api_page = context.new_page()
+        api_page.goto("https://acumbamail.com/automation/api/basic-workflow/")
+        api_ok = '"id"' in api_page.content()
+        all_cookies = {c["name"]: c["value"] for c in context.cookies("https://acumbamail.com")}
         context.close()
 
-    sessionid = cookies.get("sessionid")
-    csrftoken = cookies.get("csrftoken", "")
+    if not api_ok:
+        typer.echo("Error: el login no se completó correctamente. Inténtalo de nuevo.", err=True)
+        raise SystemExit(1)
+
+    sessionid = all_cookies.get("sessionid")
+    csrftoken = all_cookies.get("csrftoken", "")
     if not sessionid:
         typer.echo("Error: no se encontró la cookie de sesión. Inténtalo de nuevo.", err=True)
         raise SystemExit(1)
 
+    # Guardar TODAS las cookies de acumbamail para máxima compatibilidad
     session_dir = Path.home() / ".config" / "acumbamail"
     session_dir.mkdir(parents=True, exist_ok=True)
     with open(session_dir / "session.json", "w") as f:
-        json.dump({"sessionid": sessionid, "csrftoken": csrftoken}, f)
+        json.dump({"sessionid": sessionid, "csrftoken": csrftoken,
+                   "backend": all_cookies.get("backend", "py3")}, f)
 
     print_json({"status": "ok", "message": "Sesión guardada en ~/.config/acumbamail/session.json"})
 

@@ -39,9 +39,16 @@ def get_automation_client(email: str | None, password: str | None) -> "Automatio
             with open(_SESSION_FILE) as f:
                 session = json.load(f)
             if session.get("sessionid"):
-                return AutomationClient.from_session(
+                client = AutomationClient.from_session(
                     session["sessionid"], session.get("csrftoken", "")
                 )
+                # También pasar la cookie backend si está guardada
+                if session.get("backend"):
+                    client._client.cookies.set(
+                        "backend", session["backend"],
+                        domain="acumbamail.com", path="/"
+                    )
+                return client
         except (json.JSONDecodeError, KeyError):
             pass
 
