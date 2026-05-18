@@ -71,6 +71,36 @@ class AutomationClient:
         resp = self._client.delete(f"{BASE_URL}{path}", headers=self._headers())
         resp.raise_for_status()
 
+    def list_workflows(self) -> list[Automation]:
+        return [Automation.from_basic_api(item) for item in self._get("/automation/api/basic-workflow/").json()]
+
+    def get_workflow(self, workflow_id: int) -> Automation:
+        return Automation.from_full_api(self._get(f"/automation/api/workflow/{workflow_id}/").json())
+
+    def create_workflow(self, name: str, description: Optional[str] = None) -> Automation:
+        return Automation.from_full_api(
+            self._post("/automation/api/workflow/", {"name": name, "description": description}).json()
+        )
+
+    def update_workflow(self, workflow_id: int, *, name: Optional[str] = None, active: Optional[bool] = None) -> Automation:
+        payload: dict = {}
+        if name is not None:
+            payload["name"] = name
+        if active is not None:
+            payload["active"] = active
+        return Automation.from_basic_api(
+            self._patch(f"/automation/api/basic-workflow/{workflow_id}/", payload).json()
+        )
+
+    def delete_workflow(self, workflow_id: int) -> None:
+        self._delete(f"/automation/api/workflow/{workflow_id}/")
+
+    def activate_workflow(self, workflow_id: int) -> Automation:
+        return self.update_workflow(workflow_id, active=True)
+
+    def deactivate_workflow(self, workflow_id: int) -> Automation:
+        return self.update_workflow(workflow_id, active=False)
+
     def close(self) -> None:
         self._client.close()
 

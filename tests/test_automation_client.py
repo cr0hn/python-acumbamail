@@ -53,3 +53,112 @@ class TestLogin:
         )
         client.login()
         assert client._csrf_token == "new_csrf_456"
+
+
+WORKFLOW_BASIC = {"id": 35925, "name": "test", "description": None, "active": True, "booting": False}
+WORKFLOW_FULL = {
+    "id": "35925", "name": "test", "description": None,
+    "active": True, "booting": False,
+    "entry_point": {"id": "234068", "parent_id": 0, "workflow": 35925, "nodeType": "Trigger", "siblings": []},
+}
+
+
+class TestListWorkflows:
+    def test_returns_list_of_automations(self, client, httpx_mock: HTTPXMock):
+        mock_login(httpx_mock)
+        httpx_mock.add_response(
+            url=f"{BASE}/automation/api/basic-workflow/",
+            json=[WORKFLOW_BASIC],
+        )
+        client.login()
+        result = client.list_workflows()
+        assert len(result) == 1
+        assert result[0].id == 35925
+        assert result[0].name == "test"
+
+    def test_returns_empty_list(self, client, httpx_mock: HTTPXMock):
+        mock_login(httpx_mock)
+        httpx_mock.add_response(url=f"{BASE}/automation/api/basic-workflow/", json=[])
+        client.login()
+        assert client.list_workflows() == []
+
+
+class TestGetWorkflow:
+    def test_returns_automation_with_entry_point(self, client, httpx_mock: HTTPXMock):
+        mock_login(httpx_mock)
+        httpx_mock.add_response(url=f"{BASE}/automation/api/workflow/35925/", json=WORKFLOW_FULL)
+        client.login()
+        result = client.get_workflow(35925)
+        assert result.id == 35925
+        assert result.entry_point is not None
+        assert result.entry_point.node_type == "Trigger"
+
+
+class TestCreateWorkflow:
+    def test_posts_name_and_description(self, client, httpx_mock: HTTPXMock):
+        import json as _json
+        mock_login(httpx_mock)
+        httpx_mock.add_response(
+            method="POST",
+            url=f"{BASE}/automation/api/workflow/",
+            json=WORKFLOW_FULL,
+            status_code=201,
+        )
+        client.login()
+        result = client.create_workflow("test", "desc")
+        post_req = httpx_mock.get_requests()[-1]
+        body = _json.loads(post_req.content)
+        assert body["name"] == "test"
+        assert body["description"] == "desc"
+        assert result.id == 35925
+
+    def test_description_can_be_none(self, client, httpx_mock: HTTPXMock):
+        import json as _json
+        mock_login(httpx_mock)
+        httpx_mock.add_response(method="POST", url=f"{BASE}/automation/api/workflow/", json=WORKFLOW_FULL, status_code=201)
+        client.login()
+        client.create_workflow("test")
+        post_req = httpx_mock.get_requests()[-1]
+        body = _json.loads(post_req.content)
+        assert body["description"] is None
+
+
+class TestDeleteWorkflow:
+    def test_sends_delete_request(self, client, httpx_mock: HTTPXMock):
+        mock_login(httpx_mock)
+        httpx_mock.add_response(method="DELETE", url=f"{BASE}/automation/api/workflow/35925/", status_code=204)
+        client.login()
+        client.delete_workflow(35925)
+        delete_req = httpx_mock.get_requests()[-1]
+        assert delete_req.method == "DELETE"
+
+
+class TestActivateWorkflow:
+    def test_activate_sends_patch_with_active_true(self, client, httpx_mock: HTTPXMock):
+        import json as _json
+        mock_login(httpx_mock)
+        httpx_mock.add_response(
+            method="PATCH",
+            url=f"{BASE}/automation/api/basic-workflow/35925/",
+            json={**WORKFLOW_BASIC, "active": True},
+        )
+        client.login()
+        result = client.activate_workflow(35925)
+        patch_req = httpx_mock.get_requests()[-1]
+        body = _json.loads(patch_req.content)
+        assert body["active"] is True
+        assert result.active is True
+
+    def test_deactivate_sends_patch_with_active_false(self, client, httpx_mock: HTTPXMock):
+        import json as _json
+        mock_login(httpx_mock)
+        httpx_mock.add_response(
+            method="PATCH",
+            url=f"{BASE}/automation/api/basic-workflow/35925/",
+            json={**WORKFLOW_BASIC, "active": False},
+        )
+        client.login()
+        client.deactivate_workflow(35925)
+        patch_req = httpx_mock.get_requests()[-1]
+        body = _json.loads(patch_req.content)
+        assert body["active"] is False
