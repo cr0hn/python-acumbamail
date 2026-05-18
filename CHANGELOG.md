@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] — 2026-05-18
+
+### Added
+- `AutomationClient.from_session(sessionid, csrftoken)` classmethod — creates a client from
+  existing session cookies without requiring email/password login.
+- `acumbamail automations login` CLI command — opens the real Chrome browser via Playwright,
+  waits for the user to complete login, then saves `sessionid` and `csrftoken` cookies to
+  `~/.config/acumbamail/session.json`. Subsequent automation commands reuse that session
+  automatically (no credentials needed).
+- `playwright>=1.40.0` added to main dependencies.
+
+### Changed
+- `get_automation_client()` in `cli/utils.py` now checks `~/.config/acumbamail/session.json`
+  first; falls back to email/password programmatic login if not found.
+- `close()` in `AutomationClient` is now safe even if `_client` was never set.
+- Error message for missing credentials now directs user to run `acumbamail automations login`.
+
 ## [0.3.0] — 2026-05-18
 
 ### Added
