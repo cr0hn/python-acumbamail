@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026-05-18] - CLI: comandos de listas y main.py inicial
+
+### Added
+
+- Creado `acumbamail/cli/main.py` con la aplicación Typer principal y soporte para opción global `--token`
+- Creado `acumbamail/cli/commands/lists.py` con comandos: `list`, `create`, `delete`, `stats`
+- Creados placeholders `acumbamail/cli/commands/subscribers.py`, `campaigns.py`, `webhooks.py`
+- Añadidos 4 tests en `tests/test_cli.py` (clase `TestListsCommands`) — total 105 tests pasando
+
 ## [2026-05-18] - nuevos métodos en AsyncAcumbamailClient y tests async
 
 ### Added
