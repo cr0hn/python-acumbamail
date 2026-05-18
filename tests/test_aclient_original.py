@@ -761,3 +761,103 @@ class TestCreateTemplate:
         assert body["subject"] == "Hello"
         assert body["custom_category"] == "transactional"
         assert "*|UNSUBSCRIBE_URL|*" in body["html_content"]
+
+
+class TestAsyncCreateCampaignValidation:
+    async def test_raises_when_name_empty(self, async_client, httpx_mock):
+        async with AsyncAcumbamailClient(
+            auth_token=TOKEN,
+            default_sender_email="sender@test.com",
+        ) as client:
+            with pytest.raises(AcumbamailValidationError):
+                await client.create_campaign(
+                    name="", subject="s", content="<p>*|UNSUBSCRIBE_URL|*</p>",
+                    list_ids=[123]
+                )
+
+    async def test_raises_when_name_whitespace(self, async_client, httpx_mock):
+        async with AsyncAcumbamailClient(
+            auth_token=TOKEN,
+            default_sender_email="sender@test.com",
+        ) as client:
+            with pytest.raises(AcumbamailValidationError):
+                await client.create_campaign(
+                    name="   ", subject="s", content="<p>*|UNSUBSCRIBE_URL|*</p>",
+                    list_ids=[123]
+                )
+
+    async def test_raises_when_subject_empty(self, async_client, httpx_mock):
+        async with AsyncAcumbamailClient(
+            auth_token=TOKEN,
+            default_sender_email="sender@test.com",
+        ) as client:
+            with pytest.raises(AcumbamailValidationError):
+                await client.create_campaign(
+                    name="n", subject="", content="<p>*|UNSUBSCRIBE_URL|*</p>",
+                    list_ids=[123]
+                )
+
+    async def test_raises_when_no_unsubscribe_url(self, async_client, httpx_mock):
+        async with AsyncAcumbamailClient(
+            auth_token=TOKEN,
+            default_sender_email="sender@test.com",
+        ) as client:
+            with pytest.raises(AcumbamailValidationError):
+                await client.create_campaign(
+                    name="n", subject="s", content="<p>no url here</p>",
+                    list_ids=[123]
+                )
+
+    async def test_raises_when_no_list_ids(self, async_client, httpx_mock):
+        async with AsyncAcumbamailClient(
+            auth_token=TOKEN,
+            default_sender_email="sender@test.com",
+        ) as client:
+            with pytest.raises(AcumbamailValidationError):
+                await client.create_campaign(
+                    name="n", subject="s", content="<p>*|UNSUBSCRIBE_URL|*</p>",
+                    list_ids=[]
+                )
+
+    async def test_raises_when_content_empty(self, async_client, httpx_mock):
+        async with AsyncAcumbamailClient(
+            auth_token=TOKEN,
+            default_sender_email="sender@test.com",
+        ) as client:
+            with pytest.raises(AcumbamailValidationError):
+                await client.create_campaign(
+                    name="n", subject="s", content="",
+                    list_ids=[123]
+                )
+
+
+class TestAsyncSendSingleEmailValidation:
+    async def test_raises_when_invalid_email(self, async_client, httpx_mock):
+        async with AsyncAcumbamailClient(
+            auth_token=TOKEN,
+            default_sender_email="sender@test.com",
+        ) as client:
+            with pytest.raises(AcumbamailValidationError):
+                await client.send_single_email(
+                    to_email="notanemail", subject="s", content="<p>body</p>"
+                )
+
+    async def test_raises_when_subject_empty(self, async_client, httpx_mock):
+        async with AsyncAcumbamailClient(
+            auth_token=TOKEN,
+            default_sender_email="sender@test.com",
+        ) as client:
+            with pytest.raises(AcumbamailValidationError):
+                await client.send_single_email(
+                    to_email="x@test.com", subject="", content="<p>body</p>"
+                )
+
+    async def test_raises_when_content_empty(self, async_client, httpx_mock):
+        async with AsyncAcumbamailClient(
+            auth_token=TOKEN,
+            default_sender_email="sender@test.com",
+        ) as client:
+            with pytest.raises(AcumbamailValidationError):
+                await client.send_single_email(
+                    to_email="x@test.com", subject="s", content=""
+                )

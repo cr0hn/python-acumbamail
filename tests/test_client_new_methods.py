@@ -319,6 +319,16 @@ class TestGetTemplatesByName:
         result = client.get_templates_by_name("nonexistent")
         assert result == []
 
+    def test_emits_user_warning(self, client, httpx_mock: HTTPXMock):
+        import warnings
+        httpx_mock.add_response(url=api_url("getTemplatesByName"), json=[])
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            client.get_templates_by_name("test")
+            assert len(w) == 1
+            assert issubclass(w[0].category, UserWarning)
+            assert "no implementado" in str(w[0].message).lower() or "404" in str(w[0].message)
+
 
 # ---------------------------------------------------------------------------
 # SMTP
