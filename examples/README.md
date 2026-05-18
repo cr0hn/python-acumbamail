@@ -1,254 +1,137 @@
-# Acumbamail SDK Examples
+# Acumbamail SDK — Ejemplos
 
-This directory contains comprehensive examples demonstrating how to use the Acumbamail SDK for Python. Each example focuses on different aspects of email marketing automation and provides practical, production-ready code patterns.
+Ejemplos listos para ejecutar que demuestran las funcionalidades principales del SDK.
 
-## 📋 Available Examples
-
-### 🚀 Basic Examples
-
-#### `sync_example.py`
-**Purpose**: Basic synchronous client usage
-- Initialize the client
-- Create mailing lists
-- Add subscribers
-- Create and send campaigns
-- Send single emails
-
-**Best for**: Getting started with the SDK
-
-#### `async_example.py`
-**Purpose**: Asynchronous client usage with modern Python patterns
-- Context manager usage
-- Async/await patterns
-- Alternative client initialization
-- Error handling in async context
-
-**Best for**: High-performance applications and modern Python development
-
-### 📊 Advanced Analytics
-
-#### `campaign_analytics.py`
-**Purpose**: Comprehensive campaign performance analysis
-- Campaign performance metrics calculation
-- Click analysis and URL performance
-- Opener analysis by demographics
-- Bounce analysis and troubleshooting
-- Automated reporting generation
-
-**Features**:
-- Performance assessment with benchmarks
-- Geographic and device analysis
-- Detailed click tracking
-- Bounce reason categorization
-- Comprehensive reporting
-
-**Best for**: Marketing teams and data analysts
-
-### 📦 Bulk Operations
-
-#### `bulk_operations.py`
-**Purpose**: Efficient bulk data processing
-- Bulk subscriber addition with error handling
-- Multiple campaign creation
-- Batch single email sending
-- Sample data generation
-- Progress tracking and reporting
-
-**Features**:
-- Rate limiting protection
-- Error categorization and reporting
-- Success/failure tracking
-- Sample data generation for testing
-- Comprehensive result summaries
-
-**Best for**: Data migration and large-scale operations
-
-### 🧪 A/B Testing
-
-#### `ab_testing.py`
-**Purpose**: Complete A/B testing framework for email campaigns
-- Subject line testing
-- Content testing
-- Send time optimization
-- Statistical analysis
-- Winner determination
-
-**Features**:
-- Multiple variant support
-- Automated winner selection
-- Comprehensive reporting
-- Metric-based analysis
-- Template-based test creation
-
-**Best for**: Marketing optimization and conversion improvement
-
-### 🤖 Automated Workflows
-
-#### `automated_workflows.py`
-**Purpose**: Email automation and workflow management
-- Welcome series implementation
-- Drip campaign creation
-- Triggered email system
-- Template-based automation
-- Event-driven email sending
-
-**Features**:
-- Welcome series with delayed sending
-- Lead nurturing drip campaigns
-- Event-triggered emails
-- Template system for common scenarios
-- Workflow management classes
-
-**Best for**: Marketing automation and customer lifecycle management
-
-### 🛡️ Error Handling
-
-#### `error_handling.py`
-**Purpose**: Robust error handling and reliability patterns
-- Retry logic with exponential backoff
-- Circuit breaker pattern
-- Graceful degradation
-- Comprehensive error categorization
-- Safe client wrapper
-
-**Features**:
-- Configurable retry strategies
-- Error type categorization
-- Circuit breaker implementation
-- Bulk operation error handling
-- Logging and monitoring
-
-**Best for**: Production applications requiring high reliability
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-1. **Install the SDK**:
-   ```bash
-   pip install acumbamail
-   ```
-
-2. **Set up your API token**:
-   ```bash
-   export ACUMBAMAIL_AUTH_TOKEN="your-api-token-here"
-   ```
-
-3. **Get your API token**:
-   - Log into your Acumbamail account
-   - Go to Settings → API
-   - Copy your API token
-
-### Running Examples
-
-Each example can be run independently:
+## Requisitos
 
 ```bash
-# Basic usage
-python examples/sync_example.py
-python examples/async_example.py
+pip install acumbamail
+export ACUMBAMAIL_TOKEN="tu_token_aqui"
+```
 
-# Advanced features
+> El token se obtiene en tu cuenta de Acumbamail → Configuración → API.
+
+## Ejemplos disponibles
+
+### `example-001.py` — Hello World
+
+El ejemplo más sencillo posible: listar tus listas de correo y añadir un suscriptor.
+Punto de entrada recomendado para familiarizarse con el SDK.
+
+```bash
+python examples/example-001.py
+```
+
+---
+
+### `sync_example.py` — Cliente síncrono básico
+
+Muestra las operaciones más habituales con `AcumbamailClient`:
+
+- Listar listas (`get_lists`)
+- Añadir suscriptor (`add_subscriber`)
+- Obtener suscriptores (`get_subscribers`)
+- Crear campaña con `*|UNSUBSCRIBE_URL|*` (`create_campaign`)
+- Ver estadísticas de campaña (`get_campaign_total_information`)
+
+```bash
+python examples/sync_example.py
+```
+
+---
+
+### `async_example.py` — Cliente asíncrono
+
+Equivalente a `sync_example.py` usando `AsyncAcumbamailClient` con `async/await`.
+Incluye ejemplo con context manager (recomendado) y sin él.
+
+```bash
+python examples/async_example.py
+```
+
+---
+
+### `campaign_analytics.py` — Análisis de campañas
+
+Análisis de rendimiento de campañas:
+
+- Listado de campañas (`get_campaigns`)
+- Métricas totales: open rate, click rate, bounces (`get_campaign_total_information`)
+- URLs más clicadas (`get_campaign_clicks`)
+- Aperturas por navegador (`get_campaign_openers_by_browser`)
+- Aperturas por sistema operativo (`get_campaign_openers_by_os`)
+
+```bash
 python examples/campaign_analytics.py
+```
+
+---
+
+### `bulk_operations.py` — Operaciones en masa
+
+Gestión eficiente de grandes volúmenes de datos:
+
+- Alta de suscriptores en lote (`batch_add_subscribers`)
+- Búsqueda de suscriptores (`search_subscriber`)
+- Suscriptores inactivos con detalle (`get_inactive_subscribers` con `full_info=True`)
+
+```bash
 python examples/bulk_operations.py
+```
+
+---
+
+### `ab_testing.py` — A/B Testing
+
+Crea dos campañas con distintos subjects para la misma lista y compara sus estadísticas
+(`get_campaign_total_information`) para determinar qué variante funciona mejor.
+
+**AVISO:** crea campañas reales en tu cuenta.
+
+```bash
 python examples/ab_testing.py
+```
+
+---
+
+### `automated_workflows.py` — Workflows automatizados
+
+Flujo completo de automatización:
+
+1. Crear lista (`create_list`)
+2. Alta masiva de suscriptores (`batch_add_subscribers`)
+3. Crear campaña de bienvenida (`create_campaign`)
+4. Consultar estadísticas (`get_campaign_total_information`)
+5. Configurar webhook de lista (`config_list_webhook` — comentado por defecto)
+
+**AVISO:** crea listas, suscriptores y campañas reales en tu cuenta.
+
+```bash
 python examples/automated_workflows.py
+```
+
+---
+
+### `error_handling.py` — Manejo de errores
+
+Patrones de gestión de errores del SDK:
+
+- `AcumbamailValidationError` — email inválido, campaña sin `*|UNSUBSCRIBE_URL|*`
+- `AcumbamailAPIError` — errores devueltos por la API
+- `AcumbamailRateLimitError` — límite de peticiones superado (el SDK reintenta automáticamente)
+- Degradación elegante con estrategia de fallback
+- Operaciones en lote con errores parciales
+
+```bash
 python examples/error_handling.py
 ```
 
-## 📚 Example Categories
+---
 
-### For Beginners
-Start with these examples to understand the basics:
-- `sync_example.py` - Learn the fundamentals
-- `async_example.py` - Understand async patterns
+## Notas importantes
 
-### For Marketing Teams
-These examples focus on campaign management and optimization:
-- `campaign_analytics.py` - Performance analysis
-- `ab_testing.py` - Optimization and testing
-- `automated_workflows.py` - Marketing automation
-
-### For Developers
-These examples show advanced patterns and best practices:
-- `bulk_operations.py` - Data processing at scale
-- `error_handling.py` - Production-ready error handling
-- `async_example.py` - Modern Python patterns
-
-### For Data Analysts
-Focus on analytics and reporting:
-- `campaign_analytics.py` - Comprehensive reporting
-- `ab_testing.py` - Statistical analysis
-- `bulk_operations.py` - Data processing
-
-## 🔧 Customization
-
-All examples are designed to be easily customizable:
-
-1. **Modify configuration**: Update sender information, list names, etc.
-2. **Adjust timing**: Change delays, scheduling, and retry intervals
-3. **Add features**: Extend examples with your specific requirements
-4. **Integrate**: Use example code in your own applications
-
-## ⚠️ Important Notes
-
-### Test Environment
-- Examples may create test data in your Acumbamail account
-- Use with caution in production environments
-- Consider using a test account for experimentation
-
-### Rate Limiting
-- Examples include rate limiting protection
-- Be mindful of API limits in production
-- Use bulk operations for large datasets
-
-### Error Handling
-- Examples demonstrate proper error handling
-- Always implement error handling in production
-- Monitor and log errors appropriately
-
-## 🎯 Use Cases
-
-### E-commerce
-- Order confirmations (`automated_workflows.py`)
-- Abandoned cart emails (`automated_workflows.py`)
-- Product recommendations (`bulk_operations.py`)
-
-### SaaS Applications
-- Welcome series (`automated_workflows.py`)
-- Feature announcements (`bulk_operations.py`)
-- User onboarding (`automated_workflows.py`)
-
-### Marketing Agencies
-- A/B testing campaigns (`ab_testing.py`)
-- Campaign performance analysis (`campaign_analytics.py`)
-- Bulk client communications (`bulk_operations.py`)
-
-### Content Marketing
-- Newsletter management (`bulk_operations.py`)
-- Content promotion (`automated_workflows.py`)
-- Audience segmentation (`bulk_operations.py`)
-
-## 🤝 Contributing
-
-When adding new examples:
-
-1. **Follow the existing pattern**: Use similar structure and documentation
-2. **Include comprehensive comments**: Explain the purpose and usage
-3. **Add error handling**: Demonstrate best practices
-4. **Update this README**: Document new examples
-5. **Test thoroughly**: Ensure examples work correctly
-
-## 📞 Support
-
-If you encounter issues with the examples:
-
-1. Check the main SDK documentation
-2. Verify your API token is correct
-3. Ensure you have the required dependencies
-4. Review error messages for guidance
-5. Check the Acumbamail API documentation
-
-## 📄 License
-
-These examples are provided under the same license as the main SDK (MIT License). 
+- **Token:** usa siempre `ACUMBAMAIL_TOKEN` (no `ACUMBAMAIL_AUTH_TOKEN`).
+- **UNSUBSCRIBE_URL:** todo contenido de campaña debe incluir `*|UNSUBSCRIBE_URL|*` o la API lo rechazará.
+- **List ID de prueba:** los ejemplos usan `1138335` por defecto; cámbialo por el ID de una lista real de tu cuenta.
+- **Operaciones destructivas:** los ejemplos que crean o borran datos están marcados con el aviso `AVISO`.
+- **Rate limiting:** el SDK reintenta automáticamente las peticiones con HTTP 429 (3 intentos con backoff de 10s).

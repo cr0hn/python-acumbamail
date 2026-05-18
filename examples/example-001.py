@@ -1,29 +1,38 @@
+#!/usr/bin/env python3
+"""
+Hello World — ejemplo mínimo del SDK de Acumbamail.
+
+Muestra cómo inicializar el cliente, listar tus listas de correo
+y añadir un suscriptor, con el mínimo código posible.
+
+Requisito:
+    export ACUMBAMAIL_TOKEN=tu_token_aqui
+"""
+
+import os
 from acumbamail import AcumbamailClient
 
-# Initialize the client
+# ID de lista de prueba; cámbialo por el tuyo
+TEST_LIST_ID = 1138335
+
+# Inicializar el cliente con el token de la variable de entorno
 client = AcumbamailClient(
-    auth_token='41b0f45e437c4028ad9e33f1ce7c7313',
-    default_sender_name='Dani',
-    default_sender_email='cr0hn@cr0hn.com'
+    auth_token=os.getenv("ACUMBAMAIL_TOKEN"),
+    default_sender_name="Dani",
+    default_sender_email="cr0hn@cr0hn.com"
 )
 
-# Create a mailing list
-mailing_list = client.create_list(
-    name="Newsletter Subscribers",
-    description="Our monthly newsletter list"
-)
+# Listar todas las listas de correo de la cuenta
+lists = client.get_lists()
+print(f"Tienes {len(lists)} lista(s) de correo:")
+for mail_list in lists:
+    print(f"  - {mail_list.name} (ID: {mail_list.id}, suscriptores: {mail_list.subscribers_count})")
 
-# Add a subscriber
+# Añadir un suscriptor a la lista de prueba
+# AVISO: modifica datos reales en tu cuenta
 subscriber = client.add_subscriber(
-    email="user@example.com",
-    list_id=mailing_list.id,
-    fields={"name": "John Doe", "company": "Acme Corp"}
+    email="helloworld@example.com",
+    list_id=TEST_LIST_ID,
+    fields={"name": "Hello World"}
 )
-
-# Create and send a campaign
-campaign = client.create_campaign(
-    name="Welcome Campaign",
-    subject="Welcome to our newsletter!",
-    content="<h1>Welcome!</h1><p>Thank you for subscribing.</p>",
-    list_ids=[mailing_list.id]
-)
+print(f"\nSuscriptor añadido: {subscriber.email}")
