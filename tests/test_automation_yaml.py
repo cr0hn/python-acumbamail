@@ -139,6 +139,7 @@ class TestDeployYaml:
         client.create_workflow.assert_called_once_with("test", None)
         assert result["action"] == "created"
         assert result["workflow_id"] == 35925
+        assert result["active"] is False
 
     def test_returns_updated_when_workflow_exists(self):
         client = MagicMock()
@@ -153,6 +154,7 @@ class TestDeployYaml:
         result = deploy_yaml(data, client)
         client.create_workflow.assert_not_called()
         assert result["action"] == "updated"
+        assert result["active"] is False
 
 
 from acumbamail.automation_yaml import export_yaml

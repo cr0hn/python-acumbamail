@@ -100,7 +100,7 @@ def _deploy_step(workflow_id: int, source_id: str, step: dict, client: "Automati
             "wait_time": step.get("wait", 1),
             "wait_unit": _WAIT_UNIT_MAP.get(step.get("unit", "days"), 2),
         })
-        return node["id"]
+        return str(node["id"])
 
     elif stype == "email_template":
         node = client.create_node("SendTemplate", workflow_id, source_id)
@@ -115,7 +115,7 @@ def _deploy_step(workflow_id: int, source_id: str, step: dict, client: "Automati
             "tracking_urls": step.get("track_urls", True),
             "tracking_analytics": step.get("track_analytics", True),
         })
-        return node["id"]
+        return str(node["id"])
 
     elif stype == "plain_email":
         node = client.create_node("SendPlainEmail", workflow_id, source_id)
@@ -126,7 +126,7 @@ def _deploy_step(workflow_id: int, source_id: str, step: dict, client: "Automati
             "from_name": step["from_name"],
             "content": step["content"],
         })
-        return node["id"]
+        return str(node["id"])
 
     elif stype == "webhook":
         node = client.create_node("Webhook", workflow_id, source_id)
@@ -135,19 +135,21 @@ def _deploy_step(workflow_id: int, source_id: str, step: dict, client: "Automati
             "url": step["url"],
             "method": step.get("method", "POST"),
         })
-        return node["id"]
+        return str(node["id"])
 
     elif stype == "update_field":
         node = client.create_node("UpdateField", workflow_id, source_id)
         client.update_node("updatefield", node["id"], {**node, "field_name": step["field"], "field_value": step["value"]})
-        return node["id"]
+        return str(node["id"])
 
     elif stype == "move_to":
         node = client.create_node("MoveTo", workflow_id, source_id)
         client.update_node("moveto", node["id"], {**node, "target_list_id": step["list_id"]})
-        return node["id"]
+        return str(node["id"])
 
     elif stype == "condition":
+        # Fork is the parent of both branches; no merge point exists in the Acumbamail model.
+        # Steps after a condition in the parent list attach to the Fork node.
         fork = client.create_node("Fork", workflow_id, source_id)
         cond_true = client.create_node("Condition", workflow_id, fork["id"])
         client.update_node("condition", cond_true["id"], {**cond_true, "evaluation": True})
@@ -155,12 +157,12 @@ def _deploy_step(workflow_id: int, source_id: str, step: dict, client: "Automati
         cond_false = client.create_node("Condition", workflow_id, fork["id"])
         client.update_node("condition", cond_false["id"], {**cond_false, "evaluation": False})
         _build_tree(workflow_id, cond_false["id"], step.get("on_no_match", []), client)
-        return fork["id"]
+        return str(fork["id"])
 
     elif stype == "until":
         node = client.create_node("Until", workflow_id, source_id)
         _build_tree(workflow_id, node["id"], step.get("steps", []), client)
-        return node["id"]
+        return str(node["id"])
 
     else:
         raise ValueError(f"Unknown step type: {stype!r}")
