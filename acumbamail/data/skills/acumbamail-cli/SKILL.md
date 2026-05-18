@@ -127,11 +127,32 @@ El HTML de la campaña DEBE contener el tag de desuscripción, si no el comando 
 <a href="*|UNSUBSCRIBE_URL|*">Darse de baja</a>
 ```
 
+**Merge tags disponibles en el HTML:**
+
+```
+*|UNSUBSCRIBE_URL|*   → URL de baja (OBLIGATORIO en el HTML)
+*|FNAME|*             → nombre del suscriptor
+*|LNAME|*             → apellido
+*|EMAIL|*             → email del suscriptor
+*|FULLNAME|*          → nombre completo
+*|ARCHIVE_URL|*       → URL de versión online de la campaña
+*|FORWARD_URL|*       → URL para reenviar a un amigo
+```
+
+La API acepta cualquier `*|TAG|*` sin validarlo — solo `*|UNSUBSCRIBE_URL|*` se valida client-side y falla si falta.
+
 **Errores comunes:**
 
 - `Error: el HTML no contiene el tag de desuscripción` → añade `*|UNSUBSCRIBE_URL|*` al HTML
 - `Error: el email del remitente no está verificado` → verifica el remitente en https://acumbamail.com/app/account/senders/ antes de crear campañas
 - `from_email or default_sender_email is required` → añade `--from-email sender@domain.com`
+
+**Limitaciones conocidas de la API:**
+
+- **No se pueden borrar campañas por API** — solo desde el panel web
+- **No se pueden cancelar campañas programadas por API** — solo desde el panel web
+- `pre_header` y `tracking_domain` se aceptan al crear pero NO aparecen en `campaigns info`
+- `send_single_email` requiere plan SMTP activado (retorna 401 si no está activado)
 
 ### `webhooks` — Webhook configuration
 
