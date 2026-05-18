@@ -12,8 +12,9 @@ import jsonschema
 from pathlib import Path
 
 SPEC_PATH = Path(__file__).parent.parent / "acumbamail-openapi.yaml"
-TOKEN = "YOUR_TOKEN_HERE"
-LIST_ID = 1138335
+import os
+TOKEN = os.environ.get("ACUMBAMAIL_TOKEN", "")
+LIST_ID = int(os.environ.get("ACUMBAMAIL_TEST_LIST_ID", "1138335"))
 BASE_URL = "https://acumbamail.com/api/1"
 
 # Marca para tests de contrato reales (lentos, red)

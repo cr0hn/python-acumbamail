@@ -117,7 +117,7 @@ tests/
 ## CLI
 
 ```bash
-export ACUMBAMAIL_TOKEN=YOUR_TOKEN_HERE
+export ACUMBAMAIL_TOKEN=your_token_here
 
 acumbamail lists list
 acumbamail lists create --name "Lista" --sender-email x@x.com
@@ -134,5 +134,5 @@ Output is always JSON. Use `jq` for filtering: `acumbamail lists list | jq '.[].
 
 ## Test Credentials
 
-- Auth token: `YOUR_TOKEN_HERE`
-- Test list ID: `1138335`
+- Auth token: set via `ACUMBAMAIL_TOKEN` env var
+- Test list ID: `1138335` (set via `ACUMBAMAIL_TEST_LIST_ID` env var)
