@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026-05-18] - Alinear versión a 0.2.0, Optional[str] en type hints, exports explícitos en __init__.py
+
+### Changed
+
+- `pyproject.toml`: versión actualizada a `0.2.0`
+- `acumbamail/__init__.py`: versión actualizada a `0.2.0`; imports cambiados de wildcard (`*`) a explícitos con `__all__` completo
+- `acumbamail/client.py`: parámetros `str = None` y `Dict[str, Any] = None` corregidos a `Optional[str]` y `Optional[Dict[str, Any]]` en `__init__`, `_call_api`, `add_subscriber`, `create_campaign`, `send_single_email`, `create_campaign_from_template` y `send_certified_email`
+- `acumbamail/aclient.py`: mismos cambios de type hints que en `client.py` aplicados al cliente asíncrono
+
 ## [2026-05-18] - Migrar CI/CD de Poetry a uv con Trusted Publishing; actualizar README
 
 ### Changed
