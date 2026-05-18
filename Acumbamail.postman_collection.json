@@ -7,336 +7,7 @@
 	},
 	"item": [
 		{
-			"name": "Campaings",
-			"item": [
-				{
-					"name": "getCampaignBasicInformation",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{basepath}}/getCampaignBasicInformation/",
-							"host": [
-								"{{basepath}}"
-							],
-							"path": [
-								"getCampaignBasicInformation",
-								""
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "getCampaignClicks",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{basepath}}/getCampaignClicks/",
-							"host": [
-								"{{basepath}}"
-							],
-							"path": [
-								"getCampaignClicks",
-								""
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "getCampaignInformationByISP",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{basepath}}/getCampaignInformationByISP/",
-							"host": [
-								"{{basepath}}"
-							],
-							"path": [
-								"getCampaignInformationByISP",
-								""
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "getCampaignLinks",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{basepath}}/getCampaignLinks/",
-							"host": [
-								"{{basepath}}"
-							],
-							"path": [
-								"getCampaignLinks",
-								""
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "getCampaignOpeners",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{basepath}}/getCampaignOpeners/",
-							"host": [
-								"{{basepath}}"
-							],
-							"path": [
-								"getCampaignOpeners",
-								""
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "getCampaignOpenersByCountries",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{basepath}}/getCampaignOpenersByBrowser/",
-							"host": [
-								"{{basepath}}"
-							],
-							"path": [
-								"getCampaignOpenersByBrowser",
-								""
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "getCampaignOpenersByOs",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{basepath}}/getCampaignOpenersByOs/",
-							"host": [
-								"{{basepath}}"
-							],
-							"path": [
-								"getCampaignOpenersByOs",
-								""
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "getCampaigns",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\",\n    \"complete_json\": 0\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{basepath}}/getCampaigns/",
-							"host": [
-								"{{basepath}}"
-							],
-							"path": [
-								"getCampaigns",
-								""
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "getCampaignSoftBounces",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{basepath}}/getCampaignSoftBounces/",
-							"host": [
-								"{{basepath}}"
-							],
-							"path": [
-								"getCampaignSoftBounces",
-								""
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "getCampaignTotalInformation",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{basepath}}/getCampaignTotalInformation/",
-							"host": [
-								"{{basepath}}"
-							],
-							"path": [
-								"getCampaignTotalInformation",
-								""
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "getStatsByDate",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"list_id\": \"{{list_id}}\",\n    \"date_from\": \"2025-02-28\",\n    \"date_to\": \"2025-04-28\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{basepath}}/getStatsByDate/",
-							"host": [
-								"{{basepath}}"
-							],
-							"path": [
-								"getStatsByDate",
-								""
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "getTemplates",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"auth_token\": \"{{token}}\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{basepath}}/getTemplates/",
-							"host": [
-								"{{basepath}}"
-							],
-							"path": [
-								"getTemplates",
-								""
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "subscribers",
+			"name": "Subscribers",
 			"item": [
 				{
 					"name": "getLists",
@@ -345,7 +16,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"auth_token\": \"{{token}}\"\n}",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -361,18 +32,19 @@
 								"getLists",
 								""
 							]
-						}
+						},
+						"description": "Obtiene todas las listas de la cuenta."
 					},
 					"response": []
 				},
 				{
-					"name": "getListFields",
+					"name": "createList",
 					"request": {
 						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"list_id\": \"{{list_id}}\"\n}",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"sender_email\": \"sender@example.com\",\n    \"name\": \"Mi Lista\",\n    \"company\": \"Mi Empresa\",\n    \"country\": \"ES\",\n    \"city\": \"Madrid\",\n    \"address\": \"Calle Ejemplo 1\",\n    \"phone\": \"+34600000000\",\n    \"description\": \"Descripción de la lista\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -380,26 +52,27 @@
 							}
 						},
 						"url": {
-							"raw": "{{basepath}}/getListFields/",
+							"raw": "{{basepath}}/createList/",
 							"host": [
 								"{{basepath}}"
 							],
 							"path": [
-								"getListFields",
+								"createList",
 								""
 							]
-						}
+						},
+						"description": "Crea una nueva lista de suscriptores. Devuelve el ID entero de la lista creada."
 					},
 					"response": []
 				},
 				{
-					"name": "getListSegments",
+					"name": "deleteList",
 					"request": {
 						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"list_id\": \"{{list_id}}\"\n}",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -407,15 +80,16 @@
 							}
 						},
 						"url": {
-							"raw": "{{basepath}}/getListFields/",
+							"raw": "{{basepath}}/deleteList/",
 							"host": [
 								"{{basepath}}"
 							],
 							"path": [
-								"getListFields",
+								"deleteList",
 								""
 							]
-						}
+						},
+						"description": "Borra una lista de suscriptores por su ID."
 					},
 					"response": []
 				},
@@ -426,7 +100,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"list_id\": \"{{list_id}}\"\n}",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -442,7 +116,120 @@
 								"getListStats",
 								""
 							]
-						}
+						},
+						"description": "Obtiene estadísticas generales de una lista."
+					},
+					"response": []
+				},
+				{
+					"name": "getListFields",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getListFields/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getListFields",
+								""
+							]
+						},
+						"description": "Obtiene los campos de una lista en formato JSON."
+					},
+					"response": []
+				},
+				{
+					"name": "getFields",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getFields/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getFields",
+								""
+							]
+						},
+						"description": "Obtiene los campos con su tipo: {\"field_name\": \"field_type\"}."
+					},
+					"response": []
+				},
+				{
+					"name": "getForms",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getForms/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getForms",
+								""
+							]
+						},
+						"description": "Obtiene los formularios asociados a una lista."
+					},
+					"response": []
+				},
+				{
+					"name": "getListSegments",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getListSegments/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getListSegments",
+								""
+							]
+						},
+						"description": "Obtiene los segmentos de una lista."
 					},
 					"response": []
 				},
@@ -453,7 +240,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"list_id\": \"{{list_id}}\"\n}",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\",\n    \"block_index\": 0\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -461,15 +248,16 @@
 							}
 						},
 						"url": {
-							"raw": "{{basepath}}/getListStats/",
+							"raw": "{{basepath}}/getListSubsStats/",
 							"host": [
 								"{{basepath}}"
 							],
 							"path": [
-								"getListStats",
+								"getListSubsStats",
 								""
 							]
-						}
+						},
+						"description": "Obtiene estadísticas por suscriptor de una lista (paginado por block_index, por defecto 0)."
 					},
 					"response": []
 				},
@@ -480,7 +268,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"list_id\": \"{{list_id}}\"\n}",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -496,7 +284,8 @@
 								"getMergeFields",
 								""
 							]
-						}
+						},
+						"description": "Obtiene los merge fields de una lista."
 					},
 					"response": []
 				},
@@ -507,7 +296,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"list_id\": \"{{list_id}}\"\n}",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\",\n    \"block_index\": 0,\n    \"all_fields\": 1,\n    \"complete_json\": 1\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -523,7 +312,1031 @@
 								"getSubscribers",
 								""
 							]
-						}
+						},
+						"description": "Obtiene los suscriptores de una lista, paginados por block_index."
+					},
+					"response": []
+				},
+				{
+					"name": "addSubscriber",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\",\n    \"merge_fields\": {\n        \"email\": \"subscriber@example.com\",\n        \"name\": \"Nombre Apellido\"\n    },\n    \"double_optin\": 0,\n    \"update_subscriber\": 1,\n    \"complete_json\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/addSubscriber/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"addSubscriber",
+								""
+							]
+						},
+						"description": "Añade un suscriptor a una lista."
+					},
+					"response": []
+				},
+				{
+					"name": "deleteSubscriber",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\",\n    \"email\": \"subscriber@example.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/deleteSubscriber/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"deleteSubscriber",
+								""
+							]
+						},
+						"description": "Borra un suscriptor de una lista. Devuelve {\"email\": \"...\"}."
+					},
+					"response": []
+				},
+				{
+					"name": "batchAddSubscribers",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\",\n    \"update_subscriber\": 1,\n    \"complete_json\": 1,\n    \"subscribers_data\": [\n        {\"email\": \"user1@example.com\", \"name\": \"User One\"},\n        {\"email\": \"user2@example.com\", \"name\": \"User Two\"}\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/batchAddSubscribers/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"batchAddSubscribers",
+								""
+							]
+						},
+						"description": "Añade múltiples suscriptores en lote. Devuelve [{\"email\": id}, ...]."
+					},
+					"response": []
+				},
+				{
+					"name": "batchDeleteSubscribers",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\",\n    \"email_list\": [\n        \"user1@example.com\",\n        \"user2@example.com\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/batchDeleteSubscribers/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"batchDeleteSubscribers",
+								""
+							]
+						},
+						"description": "Borra múltiples suscriptores en lote (nota: la API puede devolver 500 por un bug conocido)."
+					},
+					"response": []
+				},
+				{
+					"name": "deleteAllSubscribers",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/deleteAllSubscribers/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"deleteAllSubscribers",
+								""
+							]
+						},
+						"description": "Borra todos los suscriptores de una lista (proceso en background)."
+					},
+					"response": []
+				},
+				{
+					"name": "unsubscribeSubscriber",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\",\n    \"email\": \"subscriber@example.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/unsubscribeSubscriber/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"unsubscribeSubscriber",
+								""
+							]
+						},
+						"description": "Da de baja a un suscriptor de una lista (no lo borra, solo lo marca como no activo)."
+					},
+					"response": []
+				},
+				{
+					"name": "getSubscriberDetails",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\",\n    \"subscriber\": \"subscriber@example.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getSubscriberDetails/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getSubscriberDetails",
+								""
+							]
+						},
+						"description": "Obtiene los detalles completos de un suscriptor en una lista."
+					},
+					"response": []
+				},
+				{
+					"name": "searchSubscriber",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"subscriber\": \"subscriber@example.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/searchSubscriber/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"searchSubscriber",
+								""
+							]
+						},
+						"description": "Busca un suscriptor por email o query en todas las listas."
+					},
+					"response": []
+				},
+				{
+					"name": "getInactiveSubscribers",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"date_from\": \"2025-01-01\",\n    \"date_to\": \"2025-12-31\",\n    \"full_info\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getInactiveSubscribers/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getInactiveSubscribers",
+								""
+							]
+						},
+						"description": "Obtiene suscriptores inactivos en un rango de fechas. Con full_info=1 devuelve {reason, reason_date, email}."
+					},
+					"response": []
+				},
+				{
+					"name": "addMergeTag",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\",\n    \"field_name\": \"telefono\",\n    \"field_type\": \"text\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/addMergeTag/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"addMergeTag",
+								""
+							]
+						},
+						"description": "Añade un campo personalizado a una lista. field_type puede ser: text, combobox, date, number."
+					},
+					"response": []
+				},
+				{
+					"name": "getCreditsSMTP",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCreditsSMTP/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCreditsSMTP",
+								""
+							]
+						},
+						"description": "Obtiene los créditos SMTP disponibles. Devuelve {\"Creditos\": int}."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Campaigns",
+			"item": [
+				{
+					"name": "createCampaign",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"name\": \"Mi Campaña\",\n    \"from_name\": \"Remitente\",\n    \"from_email\": \"remitente@example.com\",\n    \"subject\": \"Asunto del email\",\n    \"content\": \"<html><body><p>Contenido</p><a href=\\\"*|UNSUBSCRIBE_URL|*\\\">Darse de baja</a></body></html>\",\n    \"lists\": [\"{{list_id}}\"],\n    \"date_send\": \"2025-12-31 10:00\",\n    \"tracking_urls\": 1,\n    \"complete_json\": 1,\n    \"https\": 1,\n    \"pre_header\": \"Texto del pre-encabezado\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/createCampaign/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"createCampaign",
+								""
+							]
+						},
+						"description": "Crea una nueva campaña de email. Devuelve el ID entero de la campaña creada."
+					},
+					"response": []
+				},
+				{
+					"name": "sendTemplateCampaign",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"name\": \"Campaña desde Plantilla\",\n    \"from_name\": \"Remitente\",\n    \"from_email\": \"remitente@example.com\",\n    \"subject\": \"Asunto del email\",\n    \"template_id\": \"{{template_id}}\",\n    \"lists\": [\"{{list_id}}\"],\n    \"date_send\": \"2025-12-31 10:00\",\n    \"https\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/sendTemplateCampaign/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"sendTemplateCampaign",
+								""
+							]
+						},
+						"description": "Crea una campaña a partir de una plantilla existente. Devuelve el ID entero de la campaña."
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaigns",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"complete_json\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaigns/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaigns",
+								""
+							]
+						},
+						"description": "Lista todas las campañas de la cuenta."
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaignBasicInformation",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaignBasicInformation/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaignBasicInformation",
+								""
+							]
+						},
+						"description": "Obtiene información básica de una campaña."
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaignTotalInformation",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaignTotalInformation/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaignTotalInformation",
+								""
+							]
+						},
+						"description": "Obtiene estadísticas totales de una campaña: total_delivered, soft_bounces, unsubscribes, opened, clicks, etc."
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaignClicks",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaignClicks/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaignClicks",
+								""
+							]
+						},
+						"description": "Obtiene clicks por URL de una campaña: [{url, clicks, unique_clicks, click_rate, unique_click_rate}]."
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaignOpeners",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaignOpeners/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaignOpeners",
+								""
+							]
+						},
+						"description": "Obtiene las aperturas de una campaña con detalles: email, opened_at, ip, user_agent, country, browser, os, device."
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaignOpenersByBrowser",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaignOpenersByBrowser/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaignOpenersByBrowser",
+								""
+							]
+						},
+						"description": "Obtiene las aperturas de una campaña agrupadas por navegador: {\"Chrome\": 120, ...}."
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaignOpenersByOs",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaignOpenersByOs/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaignOpenersByOs",
+								""
+							]
+						},
+						"description": "Obtiene las aperturas de una campaña agrupadas por sistema operativo."
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaignOpenersByCountries",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaignOpenersByCountries/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaignOpenersByCountries",
+								""
+							]
+						},
+						"description": "Obtiene las aperturas de una campaña agrupadas por país."
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaignInformationByISP",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaignInformationByISP/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaignInformationByISP",
+								""
+							]
+						},
+						"description": "Obtiene información de una campaña agrupada por proveedor de servicio de internet (ISP)."
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaignLinks",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaignLinks/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaignLinks",
+								""
+							]
+						},
+						"description": "Obtiene los links utilizados en una campaña."
+					},
+					"response": []
+				},
+				{
+					"name": "getCampaignSoftBounces",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"campaign_id\": \"{{campaign_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getCampaignSoftBounces/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getCampaignSoftBounces",
+								""
+							]
+						},
+						"description": "Obtiene los soft bounces de una campaña: [{email, bounced_at, reason, status, diagnostic_code}]."
+					},
+					"response": []
+				},
+				{
+					"name": "getStatsByDate",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\",\n    \"date_from\": \"2025-01-01\",\n    \"date_to\": \"2025-12-31\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getStatsByDate/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getStatsByDate",
+								""
+							]
+						},
+						"description": "Obtiene estadísticas diarias de una lista en un rango de fechas."
+					},
+					"response": []
+				},
+				{
+					"name": "getTemplates",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getTemplates/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getTemplates",
+								""
+							]
+						},
+						"description": "Lista todas las plantillas disponibles: [{available, id, name}]."
+					},
+					"response": []
+				},
+				{
+					"name": "createTemplate",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"template_name\": \"Mi Plantilla\",\n    \"html_content\": \"<html><body><p>Contenido de la plantilla</p><a href=\\\"*|UNSUBSCRIBE_URL|*\\\">Darse de baja</a></body></html>\",\n    \"subject\": \"Asunto de la plantilla\",\n    \"custom_category\": \"categoria_personalizada\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/createTemplate/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"createTemplate",
+								""
+							]
+						},
+						"description": "Crea una nueva plantilla de email. Devuelve el ID entero de la plantilla creada."
+					},
+					"response": []
+				},
+				{
+					"name": "duplicateTemplate",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"template_name\": \"Copia de Plantilla\",\n    \"origin_template_id\": \"{{template_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/duplicateTemplate/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"duplicateTemplate",
+								""
+							]
+						},
+						"description": "Duplica una plantilla existente. Devuelve {\"template_id\": \"str\"}."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "SMTP",
+			"item": [
+				{
+					"name": "sendOne",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"from_name\": \"Remitente\",\n    \"from_email\": \"remitente@example.com\",\n    \"to_email\": \"destinatario@example.com\",\n    \"subject\": \"Asunto del email transaccional\",\n    \"body\": \"<html><body><p>Cuerpo del email</p></body></html>\",\n    \"category\": \"transaccional\",\n    \"cc_email\": \"cc@example.com\",\n    \"bcc_email\": \"bcc@example.com\",\n    \"merge_tags\": {\n        \"nombre\": \"Juan\"\n    },\n    \"program_date\": \"2025-12-31 10:00\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/sendOne/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"sendOne",
+								""
+							]
+						},
+						"description": "Envía un email transaccional individual (requiere plan SMTP activo)."
+					},
+					"response": []
+				},
+				{
+					"name": "send",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"messages\": [\n        {\n            \"from_email\": \"remitente@example.com\",\n            \"to_email\": \"destinatario1@example.com\",\n            \"subject\": \"Asunto 1\",\n            \"body\": \"<html><body><p>Cuerpo del email 1</p></body></html>\"\n        },\n        {\n            \"from_email\": \"remitente@example.com\",\n            \"to_email\": \"destinatario2@example.com\",\n            \"subject\": \"Asunto 2\",\n            \"body\": \"<html><body><p>Cuerpo del email 2</p></body></html>\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/send/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"send",
+								""
+							]
+						},
+						"description": "Envía un lote de emails transaccionales (requiere plan SMTP activo)."
+					},
+					"response": []
+				},
+				{
+					"name": "sendCertifiedEmail",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"from_name\": \"Remitente\",\n    \"from_email\": \"remitente@example.com\",\n    \"to_email\": \"destinatario@example.com\",\n    \"subject\": \"Email certificado\",\n    \"body\": \"<html><body><p>Cuerpo del email certificado</p></body></html>\",\n    \"category\": \"certificado\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/sendCertifiedEmail/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"sendCertifiedEmail",
+								""
+							]
+						},
+						"description": "Envía un email certificado (requiere plan SMTP activo)."
+					},
+					"response": []
+				},
+				{
+					"name": "getEmailStatus",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"email_key\": \"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getEmailStatus/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getEmailStatus",
+								""
+							]
+						},
+						"description": "Obtiene el estado de un email transaccional enviado usando su clave única."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Webhooks",
+			"item": [
+				{
+					"name": "getSMTPWebhook",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getSMTPWebhook/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getSMTPWebhook",
+								""
+							]
+						},
+						"description": "Obtiene la configuración del webhook SMTP: {info:{url, soft_bounces, complaints, delivered, active, hard_bounces, id, opens, clicks}}."
+					},
+					"response": []
+				},
+				{
+					"name": "configSMTPWebhook",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"callback_url\": \"https://example.com/webhook/smtp\",\n    \"delivered\": 1,\n    \"hard_bounce\": 1,\n    \"soft_bounce\": 1,\n    \"complain\": 1,\n    \"opens\": 1,\n    \"click\": 1,\n    \"active\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/configSMTPWebhook/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"configSMTPWebhook",
+								""
+							]
+						},
+						"description": "Configura el webhook SMTP para notificaciones de eventos. Devuelve {id: int}."
+					},
+					"response": []
+				},
+				{
+					"name": "getListWebhook",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/getListWebhook/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"getListWebhook",
+								""
+							]
+						},
+						"description": "Obtiene la configuración del webhook de una lista: {info:{url, soft_bounces, complaints, unsubscribes, subscribes, active, hard_bounces, id, opens, clicks}}."
+					},
+					"response": []
+				},
+				{
+					"name": "configListWebhook",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth_token\": \"{{token}}\",\n    \"response_type\": \"json\",\n    \"list_id\": \"{{list_id}}\",\n    \"callback_url\": \"https://example.com/webhook/list\",\n    \"subscribes\": 1,\n    \"unsubscribes\": 1,\n    \"hard_bounce\": 1,\n    \"soft_bounce\": 1,\n    \"complain\": 1,\n    \"opens\": 1,\n    \"click\": 1,\n    \"active\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{basepath}}/configListWebhook/",
+							"host": [
+								"{{basepath}}"
+							],
+							"path": [
+								"configListWebhook",
+								""
+							]
+						},
+						"description": "Configura el webhook de una lista para notificaciones de eventos. Devuelve {id: int}."
 					},
 					"response": []
 				}
@@ -560,7 +1373,7 @@
 		},
 		{
 			"key": "basepath",
-			"value": "https://acumbamail.com/api/1/",
+			"value": "https://acumbamail.com/api/1",
 			"type": "string"
 		},
 		{
@@ -570,6 +1383,11 @@
 		},
 		{
 			"key": "list_id",
+			"value": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+			"type": "string"
+		},
+		{
+			"key": "template_id",
 			"value": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
 			"type": "string"
 		}

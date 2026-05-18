@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026-05-18] - Postman collection completa con todos los endpoints
+
+### Added
+
+- Actualizada `Acumbamail.postman_collection.json` con todos los endpoints de la API:
+  - **Subscribers** (21 endpoints): getLists, createList, deleteList, getListStats, getListFields, getFields, getForms, getListSegments, getListSubsStats, getMergeFields, getSubscribers, addSubscriber, deleteSubscriber, batchAddSubscribers, batchDeleteSubscribers, deleteAllSubscribers, unsubscribeSubscriber, getSubscriberDetails, searchSubscriber, getInactiveSubscribers, addMergeTag, getCreditsSMTP
+  - **Campaigns** (17 endpoints): createCampaign, sendTemplateCampaign, getCampaigns, getCampaignBasicInformation, getCampaignTotalInformation, getCampaignClicks, getCampaignOpeners, getCampaignOpenersByBrowser, getCampaignOpenersByOs, getCampaignOpenersByCountries, getCampaignInformationByISP, getCampaignLinks, getCampaignSoftBounces, getStatsByDate, getTemplates, createTemplate, duplicateTemplate
+  - **SMTP** (4 endpoints, nuevo folder): sendOne, send, sendCertifiedEmail, getEmailStatus
+  - **Webhooks** (4 endpoints, nuevo folder): getSMTPWebhook, configSMTPWebhook, getListWebhook, configListWebhook
+- Añadida variable `template_id` a las variables de la collection
+- Todos los requests incluyen `response_type: "json"` en el body
+- Corregidas URLs incorrectas en requests existentes (getListSegments, getListSubsStats apuntaban a endpoints equivocados)
+
 ## [2026-05-18] - CLI: comandos de suscriptores, campañas y webhooks
 
 ### Added
