@@ -17,13 +17,18 @@ from .utils import manage_api_response_id
 
 from .models import (
     CampaignTotalInformation,
-    MailList, 
-    Campaign, 
-    Subscriber, 
-    CampaignClick, 
-    CampaignOpener, 
+    MailList,
+    Campaign,
+    Subscriber,
+    CampaignClick,
+    CampaignOpener,
     CampaignSoftBounce,
-    Template
+    Template,
+    BatchSubscriberResult,
+    SubscriberDetails,
+    InactiveSubscriber,
+    SMTPWebhook,
+    ListWebhook
 )
 from .exceptions import (
     AcumbamailError, 
@@ -1253,14 +1258,449 @@ class AcumbamailClient:
     def get_merge_fields(self, list_id: int) -> List[Dict[str, Any]]:
         """
         Get merge fields for a mailing list.
-        
+
         Args:
             list_id (int): ID of the mailing list
-            
+
         Returns:
             List[Dict[str, Any]]: List of merge fields and their configurations
         """
-        return self._call_api("getMergeFields", {"list_id": list_id}) 
-    
+        return self._call_api("getMergeFields", {"list_id": list_id})
+
+    def add_merge_tag(self, list_id: int, field_name: str, field_type: str) -> None:
+        """
+        Add a merge tag (custom field) to a mailing list.
+
+        Args:
+            list_id (int): ID of the mailing list
+            field_name (str): Name of the field
+            field_type (str): Type of the field
+        """
+        self._call_api("addMergeTag", {"list_id": list_id, "field_name": field_name, "field_type": field_type})
+
+    def batch_add_subscribers(self, list_id: int, subscribers_data: List[Dict[str, Any]], update_subscriber: bool = False) -> List[BatchSubscriberResult]:
+        """
+        Add multiple subscribers to a mailing list in a single call.
+
+        Args:
+            list_id (int): ID of the mailing list
+            subscribers_data (List[Dict[str, Any]]): List of subscriber dicts, each with at least "email"
+            update_subscriber (bool): Whether to update existing subscribers
+
+        Returns:
+            List[BatchSubscriberResult]: Results for each subscriber
+        """
+        data = {
+            "list_id": list_id,
+            "update_subscriber": 1 if update_subscriber else 0,
+            "subscribers_data": subscribers_data,
+            "complete_json": 1,
+        }
+        response = self._call_api("batchAddSubscribers", data)
+        return [BatchSubscriberResult.from_api(item) for item in response]
+
+    def batch_delete_subscribers(self, list_id: int, email_list: List[str]) -> None:
+        """
+        Delete multiple subscribers from a mailing list.
+
+        Args:
+            list_id (int): ID of the mailing list
+            email_list (List[str]): List of email addresses to delete
+        """
+        self._call_api("batchDeleteSubscribers", {"list_id": list_id, "email_list": email_list})
+
+    def delete_all_subscribers(self, list_id: int) -> None:
+        """
+        Delete all subscribers from a mailing list.
+
+        Args:
+            list_id (int): ID of the mailing list
+        """
+        self._call_api("deleteAllSubscribers", {"list_id": list_id})
+
+    def delete_list(self, list_id: int) -> None:
+        """
+        Delete a mailing list.
+
+        Args:
+            list_id (int): ID of the mailing list to delete
+        """
+        self._call_api("deleteList", {"list_id": list_id})
+
+    def get_smtp_credits(self) -> int:
+        """
+        Get the number of remaining SMTP credits.
+
+        Returns:
+            int: Number of available SMTP credits
+        """
+        response = self._call_api("getCreditsSMTP")
+        return int(response["Creditos"])
+
+    def get_fields(self, list_id: int) -> Dict[str, str]:
+        """
+        Get the fields defined for a mailing list.
+
+        Args:
+            list_id (int): ID of the mailing list
+
+        Returns:
+            Dict[str, str]: Mapping of field_name to field_type
+        """
+        return self._call_api("getFields", {"list_id": list_id})
+
+    def get_forms(self, list_id: int) -> Dict[str, Any]:
+        """
+        Get the subscription forms for a mailing list.
+
+        Args:
+            list_id (int): ID of the mailing list
+
+        Returns:
+            Dict[str, Any]: Forms associated with the list
+        """
+        return self._call_api("getForms", {"list_id": list_id})
+
+    def get_inactive_subscribers(self, date_from: datetime, date_to: datetime, full_info: bool = False) -> List:
+        """
+        Get inactive subscribers within a date range.
+
+        Args:
+            date_from (datetime): Start date
+            date_to (datetime): End date
+            full_info (bool): Whether to return full subscriber details
+
+        Returns:
+            List[str] if full_info is False, List[InactiveSubscriber] if True
+        """
+        data = {
+            "date_from": date_from.strftime("%Y-%m-%d"),
+            "date_to": date_to.strftime("%Y-%m-%d"),
+            "full_info": 1 if full_info else 0,
+        }
+        response = self._call_api("getInactiveSubscribers", data)
+        items = response.get("inactive_subscribers", [])
+        if full_info:
+            return [InactiveSubscriber.from_api(item) for item in items]
+        return [item[0] for item in items]
+
+    def get_subscriber_details(self, list_id: int, subscriber_email: str) -> SubscriberDetails:
+        """
+        Get detailed information about a specific subscriber.
+
+        Args:
+            list_id (int): ID of the mailing list
+            subscriber_email (str): Email address of the subscriber
+
+        Returns:
+            SubscriberDetails: Detailed subscriber information
+        """
+        response = self._call_api("getSubscriberDetails", {"list_id": list_id, "subscriber": subscriber_email})
+        data = next(iter(response.values()))
+        return SubscriberDetails.from_api(data)
+
+    def search_subscriber(self, subscriber: str) -> List[SubscriberDetails]:
+        """
+        Search for a subscriber across all lists.
+
+        Args:
+            subscriber (str): Email address or search term
+
+        Returns:
+            List[SubscriberDetails]: Matching subscribers
+        """
+        response = self._call_api("searchSubscriber", {"subscriber": subscriber})
+        return [SubscriberDetails.from_api(item) for item in response]
+
+    def unsubscribe_subscriber(self, list_id: int, email: str) -> None:
+        """
+        Unsubscribe a subscriber from a mailing list.
+
+        Args:
+            list_id (int): ID of the mailing list
+            email (str): Email address of the subscriber
+        """
+        self._call_api("unsubscribeSubscriber", {"list_id": list_id, "email": email})
+
+    def send_template_campaign(
+        self,
+        name: str,
+        subject: str,
+        template_id: int,
+        list_ids: List[int],
+        from_name: str = None,
+        from_email: str = None,
+        scheduled_at: datetime = None,
+        https: bool = True,
+    ) -> Campaign:
+        """
+        Create and send a campaign based on a template.
+
+        Args:
+            name (str): Campaign name
+            subject (str): Email subject line
+            template_id (int): ID of the template to use
+            list_ids (List[int]): IDs of target mailing lists
+            from_name (str, optional): Sender name
+            from_email (str, optional): Sender email address
+            scheduled_at (datetime, optional): When to schedule the campaign
+            https (bool): Whether to use HTTPS for tracking links
+
+        Returns:
+            Campaign: The created campaign
+        """
+        if not from_email and not self.default_sender_email:
+            raise AcumbamailValidationError("from_email or default_sender_email is required for creating campaigns")
+
+        data = {
+            "name": name,
+            "from_name": from_name or self.default_sender_name,
+            "from_email": from_email or self.default_sender_email,
+            "subject": subject,
+            "template_id": template_id,
+            "lists": list_ids,
+            "https": 1 if https else 0,
+        }
+
+        if scheduled_at:
+            data["date_send"] = scheduled_at.strftime("%Y-%m-%d %H:%M")
+
+        response = self._call_api("sendTemplateCampaign", data)
+        campaign_id = manage_api_response_id(response)
+
+        return Campaign(
+            id=campaign_id,
+            name=name,
+            subject=subject,
+            content="",
+            from_name=from_name or self.default_sender_name,
+            from_email=from_email or self.default_sender_email,
+            list_ids=list_ids,
+            scheduled_at=scheduled_at,
+        )
+
+    def duplicate_template(self, template_name: str, origin_template_id: int) -> Template:
+        """
+        Duplicate an existing template under a new name.
+
+        Args:
+            template_name (str): Name for the new template
+            origin_template_id (int): ID of the template to duplicate
+
+        Returns:
+            Template: The newly created template
+        """
+        response = self._call_api("duplicateTemplate", {"template_name": template_name, "origin_template_id": origin_template_id})
+        template_id = int(response["template_id"])
+        return Template(id=template_id, name=template_name, content="")
+
+    def get_campaign_openers_by_countries(self, campaign_id: int) -> Dict[str, int]:
+        """
+        Get campaign openers grouped by country.
+
+        Args:
+            campaign_id (int): ID of the campaign
+
+        Returns:
+            Dict[str, int]: Number of opens per country
+        """
+        return self._call_api("getCampaignOpenersByCountries", {"campaign_id": campaign_id})
+
+    def get_templates_by_name(self, template_name: str) -> List[Template]:
+        """
+        Search templates by name.
+
+        Args:
+            template_name (str): Name to search for
+
+        Returns:
+            List[Template]: Matching templates
+        """
+        response = self._call_api("getTemplatesByName", {"template_name": template_name})
+        if isinstance(response, list):
+            return [Template.from_api(data) for data in response]
+        return []
+
+    def send_emails(self, messages: List[Dict[str, Any]]) -> List[Any]:
+        """
+        Send multiple emails via SMTP in batch.
+
+        Args:
+            messages (List[Dict[str, Any]]): List of message dicts
+
+        Returns:
+            List[Any]: API response for each message
+        """
+        return self._call_api("send", {"messages": messages})
+
+    def send_certified_email(
+        self,
+        to_email: str,
+        subject: str,
+        content: str,
+        from_name: str = None,
+        from_email: str = None,
+        cc_email: str = None,
+        bcc_email: str = None,
+        category: str = '',
+    ) -> str:
+        """
+        Send a certified email via SMTP.
+
+        Args:
+            to_email (str): Recipient email address
+            subject (str): Email subject
+            content (str): Email body (HTML)
+            from_name (str, optional): Sender name
+            from_email (str, optional): Sender email address
+            cc_email (str, optional): CC email address
+            bcc_email (str, optional): BCC email address
+            category (str): Category label for the email
+
+        Returns:
+            str: API response string
+        """
+        if not from_email and not self.default_sender_email:
+            raise AcumbamailValidationError("from_email or default_sender_email is required for sending emails")
+
+        data = {
+            "from_name": from_name or self.default_sender_name,
+            "from_email": from_email or self.default_sender_email,
+            "to_email": to_email,
+            "subject": subject,
+            "body": content,
+            "category": category,
+        }
+
+        if cc_email:
+            data["cc_email"] = cc_email
+
+        if bcc_email:
+            data["bcc_email"] = bcc_email
+
+        response = self._call_api("sendCertifiedEmail", data)
+        return str(response)
+
+    def get_email_status(self, email_key: str) -> Dict[str, Any]:
+        """
+        Get the delivery status of a sent email.
+
+        Args:
+            email_key (str): The unique key identifying the sent email
+
+        Returns:
+            Dict[str, Any]: Status information for the email
+        """
+        return self._call_api("getEmailStatus", {"email_key": email_key})
+
+    def get_smtp_webhook(self) -> SMTPWebhook:
+        """
+        Get the current SMTP webhook configuration.
+
+        Returns:
+            SMTPWebhook: Current SMTP webhook settings
+        """
+        response = self._call_api("getSMTPWebhook")
+        return SMTPWebhook.from_api(response)
+
+    def get_list_webhook(self, list_id: int) -> ListWebhook:
+        """
+        Get the webhook configuration for a mailing list.
+
+        Args:
+            list_id (int): ID of the mailing list
+
+        Returns:
+            ListWebhook: Current list webhook settings
+        """
+        response = self._call_api("getListWebhook", {"list_id": list_id})
+        return ListWebhook.from_api(response)
+
+    def config_smtp_webhook(
+        self,
+        callback_url: str,
+        delivered: bool = False,
+        hard_bounce: bool = False,
+        soft_bounce: bool = False,
+        complain: bool = False,
+        opens: bool = False,
+        click: bool = False,
+        active: bool = True,
+    ) -> int:
+        """
+        Configure the SMTP webhook.
+
+        Args:
+            callback_url (str): URL to receive webhook events
+            delivered (bool): Notify on delivered emails
+            hard_bounce (bool): Notify on hard bounces
+            soft_bounce (bool): Notify on soft bounces
+            complain (bool): Notify on complaints
+            opens (bool): Notify on opens
+            click (bool): Notify on clicks
+            active (bool): Whether the webhook is active
+
+        Returns:
+            int: ID of the configured webhook
+        """
+        data = {
+            "callback_url": callback_url,
+            "delivered": 1 if delivered else 0,
+            "hard_bounce": 1 if hard_bounce else 0,
+            "soft_bounce": 1 if soft_bounce else 0,
+            "complain": 1 if complain else 0,
+            "opens": 1 if opens else 0,
+            "click": 1 if click else 0,
+            "active": 1 if active else 0,
+        }
+        response = self._call_api("configSMTPWebhook", data)
+        return int(response["id"])
+
+    def config_list_webhook(
+        self,
+        list_id: int,
+        callback_url: str,
+        subscribes: bool = False,
+        unsubscribes: bool = False,
+        hard_bounce: bool = False,
+        soft_bounce: bool = False,
+        complain: bool = False,
+        opens: bool = False,
+        click: bool = False,
+        active: bool = True,
+    ) -> int:
+        """
+        Configure the webhook for a mailing list.
+
+        Args:
+            list_id (int): ID of the mailing list
+            callback_url (str): URL to receive webhook events
+            subscribes (bool): Notify on new subscriptions
+            unsubscribes (bool): Notify on unsubscriptions
+            hard_bounce (bool): Notify on hard bounces
+            soft_bounce (bool): Notify on soft bounces
+            complain (bool): Notify on complaints
+            opens (bool): Notify on opens
+            click (bool): Notify on clicks
+            active (bool): Whether the webhook is active
+
+        Returns:
+            int: ID of the configured webhook
+        """
+        data = {
+            "list_id": list_id,
+            "callback_url": callback_url,
+            "subscribes": 1 if subscribes else 0,
+            "unsubscribes": 1 if unsubscribes else 0,
+            "hard_bounce": 1 if hard_bounce else 0,
+            "soft_bounce": 1 if soft_bounce else 0,
+            "complain": 1 if complain else 0,
+            "opens": 1 if opens else 0,
+            "click": 1 if click else 0,
+            "active": 1 if active else 0,
+        }
+        response = self._call_api("configListWebhook", data)
+        return int(response["id"])
+
 
 __all__ = ("AcumbamailClient",)

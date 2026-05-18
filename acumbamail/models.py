@@ -515,13 +515,134 @@ class Template:
             updated_at=datetime.fromisoformat(data['updated_at']) if 'updated_at' in data else None
         )
 
+@dataclass
+class SubscriberDetails:
+    id: int
+    email: str
+    status: str
+    create_date: Optional[datetime] = None
+    list_id: Optional[int] = None
+    fields: Dict[str, Any] = None
+
+    @classmethod
+    def from_api(cls, data: Dict[str, Any]) -> 'SubscriberDetails':
+        _known = {'id', 'email', 'status', 'create_date', 'list_id'}
+        create_date = None
+        if 'create_date' in data and data['create_date']:
+            create_date = datetime.strptime(data['create_date'], '%Y/%m/%d %H:%M:%S')
+        fields = {k: v for k, v in data.items() if k not in _known}
+        return cls(
+            id=int(data['id']),
+            email=data['email'],
+            status=data['status'],
+            create_date=create_date,
+            list_id=int(data['list_id']) if 'list_id' in data else None,
+            fields=fields if fields else None
+        )
+
+
+@dataclass
+class InactiveSubscriber:
+    email: str
+    reason: Optional[int] = None
+    reason_date: Optional[datetime] = None
+
+    @classmethod
+    def from_api(cls, data: Dict[str, Any]) -> 'InactiveSubscriber':
+        reason_date = None
+        if 'reason_date' in data and data['reason_date']:
+            reason_date = datetime.strptime(data['reason_date'], '%Y/%m/%d %H:%M:%S')
+        return cls(
+            email=data['email'],
+            reason=int(data['reason']) if 'reason' in data else None,
+            reason_date=reason_date
+        )
+
+
+@dataclass
+class SMTPWebhook:
+    id: int
+    url: str
+    active: bool
+    delivered: bool
+    hard_bounces: bool
+    soft_bounces: bool
+    complaints: bool
+    opens: bool
+    clicks: bool
+
+    @classmethod
+    def from_api(cls, data: Dict[str, Any]) -> 'SMTPWebhook':
+        info = data['info']
+        return cls(
+            id=int(info['id']),
+            url=info['url'],
+            active=bool(info['active']),
+            delivered=bool(info['delivered']),
+            hard_bounces=bool(info['hard_bounces']),
+            soft_bounces=bool(info['soft_bounces']),
+            complaints=bool(info['complaints']),
+            opens=bool(info['opens']),
+            clicks=bool(info['clicks'])
+        )
+
+
+@dataclass
+class ListWebhook:
+    id: int
+    url: str
+    active: bool
+    subscribes: bool
+    unsubscribes: bool
+    hard_bounces: bool
+    soft_bounces: bool
+    complaints: bool
+    opens: bool
+    clicks: bool
+
+    @classmethod
+    def from_api(cls, data: Dict[str, Any]) -> 'ListWebhook':
+        info = data['info']
+        return cls(
+            id=int(info['id']),
+            url=info['url'],
+            active=bool(info['active']),
+            subscribes=bool(info['subscribes']),
+            unsubscribes=bool(info['unsubscribes']),
+            hard_bounces=bool(info['hard_bounces']),
+            soft_bounces=bool(info['soft_bounces']),
+            complaints=bool(info['complaints']),
+            opens=bool(info['opens']),
+            clicks=bool(info['clicks'])
+        )
+
+
+@dataclass
+class BatchSubscriberResult:
+    email: str
+    subscriber_id: int
+
+    @classmethod
+    def from_api(cls, data: Dict[str, Any]) -> 'BatchSubscriberResult':
+        email, subscriber_id = next(iter(data.items()))
+        return cls(
+            email=email,
+            subscriber_id=int(subscriber_id)
+        )
+
+
 __all__ = [
-    "MailList", 
-    "Subscriber", 
-    "Campaign", 
-    "CampaignClick", 
-    "CampaignOpener", 
+    "MailList",
+    "Subscriber",
+    "Campaign",
+    "CampaignClick",
+    "CampaignOpener",
     "CampaignSoftBounce",
     "Template",
-    "CampaignTotalInformation"
+    "CampaignTotalInformation",
+    "SubscriberDetails",
+    "InactiveSubscriber",
+    "SMTPWebhook",
+    "ListWebhook",
+    "BatchSubscriberResult"
 ] 
