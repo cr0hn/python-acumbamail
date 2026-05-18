@@ -1,6 +1,6 @@
 [project]
 name = "acumbamail"
-version = "0.1.4"
+version = "0.1.5"
 description = "Acumamail SDK client for Python"
 authors = [
     {name = "Daniel Garcia (cr0hn)"}
@@ -9,9 +9,12 @@ license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "httpx>=0.28.1,<0.29.0"
+    "httpx>=0.28.1,<0.29.0",
+    "typer>=0.15.0",
 ]
 
+[project.scripts]
+acumbamail = "acumbamail.cli.main:app"
 
 [build-system]
 requires = ["hatchling"]
