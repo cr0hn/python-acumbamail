@@ -153,3 +153,68 @@ class TestDeployYaml:
         result = deploy_yaml(data, client)
         client.create_workflow.assert_not_called()
         assert result["action"] == "updated"
+
+
+from acumbamail.automation_yaml import export_yaml
+
+
+def make_node(node_id, node_type, workflow_id=1, siblings=None, **extra):
+    return AutomationNode(
+        id=str(node_id), node_type=node_type, workflow_id=workflow_id,
+        parent_id=0, siblings=siblings or [], extra=extra,
+    )
+
+
+class TestExportYaml:
+    def test_exports_name_and_description(self):
+        wf = Automation(id=1, name="test", description="my desc", active=False, booting=False,
+                        entry_point=make_node(100, "Trigger", workflow_list=1138335,
+                                              trigger_reason={"reason_index": 0, "config": {"apply_to_subscribers_in_list": False}}))
+        result = export_yaml(wf)
+        assert result["name"] == "test"
+        assert result["description"] == "my desc"
+
+    def test_exports_trigger_list_id_and_event(self):
+        trigger = make_node(100, "Trigger", workflow_list=1138335,
+                            trigger_reason={"reason_index": 0, "config": {"apply_to_subscribers_in_list": False}})
+        wf = Automation(id=1, name="test", description=None, active=False, booting=False, entry_point=trigger)
+        result = export_yaml(wf)
+        assert result["trigger"]["list_id"] == 1138335
+        assert result["trigger"]["event"] == "subscriber_added"
+        assert result["trigger"]["apply_to_existing"] is False
+
+    def test_exports_delay_step(self):
+        delay = make_node(200, "Delay", wait_time=3, wait_unit=2)
+        trigger = make_node(100, "Trigger", workflow_list=1138335,
+                            trigger_reason={"reason_index": 0, "config": {}}, siblings=[delay])
+        wf = Automation(id=1, name="test", description=None, active=False, booting=False, entry_point=trigger)
+        result = export_yaml(wf)
+        assert result["steps"][0]["type"] == "delay"
+        assert result["steps"][0]["wait"] == 3
+        assert result["steps"][0]["unit"] == "days"
+
+    def test_exports_email_template_step(self):
+        email = make_node(200, "SendTemplate", subject="Hi!", from_email="a@b.com",
+                          from_name="A", template=9999, preheader="preview")
+        trigger = make_node(100, "Trigger", workflow_list=1138335,
+                            trigger_reason={"reason_index": 0, "config": {}}, siblings=[email])
+        wf = Automation(id=1, name="test", description=None, active=False, booting=False, entry_point=trigger)
+        result = export_yaml(wf)
+        step = result["steps"][0]
+        assert step["type"] == "email_template"
+        assert step["subject"] == "Hi!"
+        assert step["template_id"] == 9999
+        assert step["preheader"] == "preview"
+
+    def test_exports_condition_as_on_match_on_no_match(self):
+        cond_true = make_node(301, "Condition", evaluation=True)
+        cond_false = make_node(302, "Condition", evaluation=False)
+        fork = make_node(300, "Fork", siblings=[cond_true, cond_false])
+        trigger = make_node(100, "Trigger", workflow_list=1138335,
+                            trigger_reason={"reason_index": 0, "config": {}}, siblings=[fork])
+        wf = Automation(id=1, name="test", description=None, active=False, booting=False, entry_point=trigger)
+        result = export_yaml(wf)
+        step = result["steps"][0]
+        assert step["type"] == "condition"
+        assert "on_match" in step
+        assert "on_no_match" in step

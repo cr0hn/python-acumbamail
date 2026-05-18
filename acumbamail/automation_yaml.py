@@ -164,3 +164,65 @@ def _deploy_step(workflow_id: int, source_id: str, step: dict, client: "Automati
 
     else:
         raise ValueError(f"Unknown step type: {stype!r}")
+
+
+def export_yaml(workflow: "Automation") -> dict:
+    result: dict = {"name": workflow.name}
+    if workflow.description:
+        result["description"] = workflow.description
+
+    if workflow.entry_point:
+        trigger = workflow.entry_point
+        ev_inv = {v: k for k, v in _TRIGGER_EVENT_MAP.items()}
+        reason = trigger.extra.get("trigger_reason") or {}
+        result["trigger"] = {
+            "list_id": trigger.extra.get("workflow_list"),
+            "event": ev_inv.get(reason.get("reason_index", 0), "subscriber_added"),
+            "apply_to_existing": (reason.get("config") or {}).get("apply_to_subscribers_in_list", False),
+        }
+        result["steps"] = _nodes_to_steps(trigger.siblings)
+
+    return result
+
+
+def _nodes_to_steps(nodes: list) -> list:
+    return [s for s in (_node_to_step(n) for n in nodes) if s is not None]
+
+
+def _node_to_step(node: "AutomationNode") -> Optional[dict]:
+    unit_inv = {v: k for k, v in _WAIT_UNIT_MAP.items()}
+    nt = node.node_type
+
+    if nt == "Delay":
+        return {"type": "delay", "wait": node.extra.get("wait_time", 1),
+                "unit": unit_inv.get(node.extra.get("wait_unit", 2), "days")}
+    elif nt == "SendTemplate":
+        step: dict = {"type": "email_template", "subject": node.extra.get("subject", ""),
+                      "from_email": node.extra.get("from_email", ""), "from_name": node.extra.get("from_name", ""),
+                      "template_id": node.extra.get("template")}
+        if node.extra.get("preheader"):
+            step["preheader"] = node.extra["preheader"]
+        return step
+    elif nt == "SendPlainEmail":
+        return {"type": "plain_email", "subject": node.extra.get("subject", ""),
+                "from_email": node.extra.get("from_email", ""), "from_name": node.extra.get("from_name", ""),
+                "content": node.extra.get("content", "")}
+    elif nt == "Webhook":
+        return {"type": "webhook", "url": node.extra.get("url", ""), "method": node.extra.get("method", "POST")}
+    elif nt == "UpdateField":
+        return {"type": "update_field", "field": node.extra.get("field_name", ""),
+                "value": node.extra.get("field_value", "")}
+    elif nt == "MoveTo":
+        return {"type": "move_to", "list_id": node.extra.get("target_list_id")}
+    elif nt == "Fork":
+        on_match, on_no_match = [], []
+        for child in node.siblings:
+            if child.node_type == "Condition":
+                if child.extra.get("evaluation"):
+                    on_match = _nodes_to_steps(child.siblings)
+                else:
+                    on_no_match = _nodes_to_steps(child.siblings)
+        return {"type": "condition", "on_match": on_match, "on_no_match": on_no_match}
+    elif nt == "Until":
+        return {"type": "until", "steps": _nodes_to_steps(node.siblings)}
+    return None
