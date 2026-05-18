@@ -39,6 +39,7 @@
   - [Webhooks](#webhooks)
 - [Error Handling](#error-handling)
 - [Claude Code Skill](#claude-code-skill)
+- [n8n Integration](#n8n-integration)
 - [Examples](#examples)
 - [Contributing](#contributing)
 - [License](#license)
@@ -452,6 +453,38 @@ $ acumbamail install-skills -g   # user-global    → ~/.claude/skills/
 ```
 
 Two skills are installed: `acumbamail-cli` (lists, subscribers, campaigns, webhooks, templates) and `acumbamail-automations` (YAML schema, deploy/export/delete workflows).
+
+## n8n Integration
+
+If you use [n8n](https://n8n.io) for workflow automation, the **[n8n-nodes-acumbamail](https://github.com/cr0hn/n8n-nodes-acumbamail)** community node brings the full Acumbamail API into your visual workflows — no code required.
+
+<p align="center">
+  <a href="https://github.com/cr0hn/n8n-nodes-acumbamail">
+    <img src="https://img.shields.io/badge/n8n-Community%20Node-EA4B71?logo=n8n&logoColor=white" alt="n8n community node">
+  </a>
+  <a href="https://www.npmjs.com/package/n8n-nodes-acumbamail">
+    <img src="https://img.shields.io/npm/v/n8n-nodes-acumbamail?label=npm&color=CB3837&logo=npm&logoColor=white" alt="npm version">
+  </a>
+</p>
+
+**46 operations** across 6 resources — lists, subscribers, campaigns, templates, SMTP, and webhooks — plus a **trigger node** for real-time webhook events (new subscriptions, bounces, clicks, opens).
+
+| Resource | Operations |
+|----------|-----------|
+| **List** | Get All, Create, Delete, Get Stats, Get Fields, Get Merge Fields, Add Merge Tag, Get Forms, … |
+| **Subscriber** | Get All, Add, Delete, Unsubscribe, Batch Add, Get Details, Search, Get Inactive, … |
+| **Campaign** | Get All, Create, Get Stats, Get Clicks, Get Openers by Browser / OS / Country, … |
+| **Template** | Get All, Create, Duplicate, Send Campaign |
+| **SMTP** | Send Email, Send Batch, Send Certified, Get Status, Get Credits |
+| **Webhook (trigger)** | New subscription, unsubscription, bounce, spam complaint, open, click, delivered |
+
+**Install in n8n:**
+
+```
+Settings → Community Nodes → n8n-nodes-acumbamail
+```
+
+→ **[github.com/cr0hn/n8n-nodes-acumbamail](https://github.com/cr0hn/n8n-nodes-acumbamail)**
 
 ## Examples
 
