@@ -89,13 +89,13 @@ class AcumbamailClient:
     """
 
     def __init__(
-        self, 
-        auth_token: str, 
-        default_sender_name: str = None,
-        default_sender_email: str = None,
+        self,
+        auth_token: str,
+        default_sender_name: Optional[str] = None,
+        default_sender_email: Optional[str] = None,
         *,
-        sender_company: str = None,
-        sender_country: str = None
+        sender_company: Optional[str] = None,
+        sender_country: Optional[str] = None,
     ):
         """
         Initialize the Acumbamail client.
@@ -148,7 +148,7 @@ class AcumbamailClient:
         self.sender_company = sender_company
         self.sender_country = sender_country
 
-    def _call_api(self, endpoint: str, data: Dict[str, Any] = None, max_retries: int = 3) -> Dict[str, Any]:
+    def _call_api(self, endpoint: str, data: Optional[Dict[str, Any]] = None, max_retries: int = 3) -> Dict[str, Any]:
         """
         Make a call to the Acumbamail API.
         
@@ -397,7 +397,7 @@ class AcumbamailClient:
         self,
         email: str,
         list_id: int,
-        fields: Dict[str, Any] = None,
+        fields: Optional[Dict[str, Any]] = None,
         double_optin: bool = False,
         update_subscriber: bool = False,
     ) -> Subscriber:
@@ -584,11 +584,11 @@ class AcumbamailClient:
         subject: str,
         content: str,
         list_ids: List[int],
-        from_name: str = None,
-        from_email: str = None,
+        from_name: Optional[str] = None,
+        from_email: Optional[str] = None,
         scheduled_at: datetime = None,
         tracking_enabled: bool = True,
-        tracking_domain: str = None,
+        tracking_domain: Optional[str] = None,
         https: bool = True,
     ) -> Campaign:
         """
@@ -716,8 +716,8 @@ class AcumbamailClient:
         to_email: str,
         subject: str,
         content: str,
-        from_name: str = None,
-        from_email: str = None,
+        from_name: Optional[str] = None,
+        from_email: Optional[str] = None,
         category: str = ''
     ) -> int:
         """
@@ -1447,8 +1447,8 @@ class AcumbamailClient:
         subject: str,
         template_id: int,
         list_ids: List[int],
-        from_name: str = None,
-        from_email: str = None,
+        from_name: Optional[str] = None,
+        from_email: Optional[str] = None,
         scheduled_at: datetime = None,
         https: bool = True,
     ) -> Campaign:
@@ -1557,10 +1557,10 @@ class AcumbamailClient:
         to_email: str,
         subject: str,
         content: str,
-        from_name: str = None,
-        from_email: str = None,
-        cc_email: str = None,
-        bcc_email: str = None,
+        from_name: Optional[str] = None,
+        from_email: Optional[str] = None,
+        cc_email: Optional[str] = None,
+        bcc_email: Optional[str] = None,
         category: str = '',
     ) -> str:
         """
