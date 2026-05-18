@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026-05-18] - Tests para métodos originales del SDK (pre-sesión)
+
+### Added
+
+- `tests/test_client_original.py`: 85 tests del cliente síncrono para métodos pre-sesión
+  - Lists/Subscribers: `get_lists`, `create_list`, `get_subscribers`, `add_subscriber`, `delete_subscriber`,
+    `get_list_stats`, `get_list_fields`, `get_list_segments`, `get_list_subs_stats`, `get_merge_fields`
+  - Campaigns: `create_campaign`, `send_single_email`, `get_campaign_basic_information`,
+    `get_campaign_clicks`, `get_campaign_information_by_isp`, `get_campaign_links`, `get_campaign_openers`,
+    `get_campaign_openers_by_browser`, `get_campaign_openers_by_os`, `get_campaigns`,
+    `get_campaign_soft_bounces`, `get_campaign_total_information`, `get_stats_by_date`
+  - Templates: `get_templates`, `create_template`
+- `tests/test_aclient_original.py`: 80 tests del cliente asíncrono (espejo del síncrono)
+  - Mismos métodos que el sync con `await`, fixture `async_client` con context manager
+
+### Notes
+
+- `send_single_email` en async no valida email/subject/content vacíos (diferencia con sync)
+- `create_campaign` en async no valida name/subject vacíos (diferencia con sync)
+- `get_lists` hace dos llamadas HTTP: `getLists` + `getListStats` por cada lista
+
 ## [2026-05-18] - Tests de calidad y contract testing del OpenAPI spec
 
 ### Added
