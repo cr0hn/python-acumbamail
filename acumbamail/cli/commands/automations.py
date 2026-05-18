@@ -35,6 +35,7 @@ def login_automation():
             user_data_dir=str(profile_dir),
             channel="chrome",
             headless=False,
+            ignore_default_args=["--no-sandbox"],
             args=["--disable-blink-features=AutomationControlled", "--no-first-run"],
         )
         page = context.new_page() if not context.pages else context.pages[0]
