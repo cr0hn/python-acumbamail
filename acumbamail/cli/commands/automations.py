@@ -16,33 +16,48 @@ _PASS_OPT = typer.Option(None, "--password", envvar="ACUMBAMAIL_PASSWORD")
 def login_automation():
     """Abre Chrome para autenticarte con Acumbamail y guarda la sesión."""
     import json
+    import platform
     from pathlib import Path
+
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
-        typer.echo("Error: playwright no instalado. Ejecuta: uv add playwright && playwright install chrome", err=True)
+        typer.echo("Error: playwright no instalado. Ejecuta: pip install playwright && playwright install chrome", err=True)
         raise SystemExit(1)
+
+    # Perfil dedicado para este CLI — no toca el Chrome del usuario
+    profile_dir = Path.home() / ".config" / "acumbamail" / "chrome_profile"
+    profile_dir.mkdir(parents=True, exist_ok=True)
 
     typer.echo("Abriendo Chrome... Inicia sesión en Acumbamail.")
     with sync_playwright() as p:
-        browser = p.chromium.launch(channel="chrome", headless=False)
-        context = browser.new_context()
-        page = context.new_page()
+        context = p.chromium.launch_persistent_context(
+            user_data_dir=str(profile_dir),
+            channel="chrome",
+            headless=False,
+            args=["--disable-blink-features=AutomationControlled", "--no-first-run"],
+        )
+        page = context.new_page() if not context.pages else context.pages[0]
         page.goto("https://acumbamail.com/login/")
+        page.bring_to_front()
         try:
-            page.wait_for_url("**/app/**", timeout=120_000)
+            # Espera hasta que el usuario salga de la página de login
+            page.wait_for_function(
+                "!window.location.href.includes('/login')",
+                timeout=300_000,
+            )
         except Exception:
-            typer.echo("Error: tiempo de espera agotado o login cancelado.", err=True)
-            browser.close()
+            typer.echo("Tiempo de espera agotado o login cancelado.", err=True)
+            context.close()
             raise SystemExit(1)
 
         cookies = {c["name"]: c["value"] for c in context.cookies("https://acumbamail.com")}
-        browser.close()
+        context.close()
 
     sessionid = cookies.get("sessionid")
     csrftoken = cookies.get("csrftoken", "")
     if not sessionid:
-        typer.echo("Error: no se encontró la cookie de sesión tras el login.", err=True)
+        typer.echo("Error: no se encontró la cookie de sesión. Inténtalo de nuevo.", err=True)
         raise SystemExit(1)
 
     session_dir = Path.home() / ".config" / "acumbamail"
@@ -50,7 +65,7 @@ def login_automation():
     with open(session_dir / "session.json", "w") as f:
         json.dump({"sessionid": sessionid, "csrftoken": csrftoken}, f)
 
-    print_json({"status": "ok", "message": "Sesión guardada. Ya puedes usar los comandos de automatizaciones."})
+    print_json({"status": "ok", "message": "Sesión guardada en ~/.config/acumbamail/session.json"})
 
 
 @app.command("list")
