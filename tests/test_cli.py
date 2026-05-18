@@ -41,3 +41,64 @@ class TestPrintJson:
         print_json([{"id": 1}, {"id": 2}])
         captured = capsys.readouterr()
         assert json.loads(captured.out) == [{"id": 1}, {"id": 2}]
+
+
+class TestListsCommands:
+    def test_lists_list_outputs_json(self):
+        from acumbamail.cli.main import app
+        from acumbamail.models import MailList
+
+        mock_lists = [MailList(id=123, name="Newsletter", description="", subscribers_count=100)]
+        with patch("acumbamail.cli.commands.lists.get_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get_lists.return_value = mock_lists
+            mock_get_client.return_value = mock_client
+
+            result = runner.invoke(app, ["--token", "tk", "lists", "list"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data[0]["id"] == 123
+        assert data[0]["name"] == "Newsletter"
+
+    def test_lists_create_outputs_created_list(self):
+        from acumbamail.cli.main import app
+        from acumbamail.models import MailList
+
+        mock_list = MailList(id=456, name="New List", description="")
+        with patch("acumbamail.cli.commands.lists.get_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.create_list.return_value = mock_list
+            mock_get_client.return_value = mock_client
+
+            result = runner.invoke(app, [
+                "--token", "tk", "lists", "create",
+                "--name", "New List", "--sender-email", "s@x.com"
+            ])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["id"] == 456
+
+    def test_lists_delete_exits_zero(self):
+        from acumbamail.cli.main import app
+        with patch("acumbamail.cli.commands.lists.get_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.delete_list.return_value = None
+            mock_get_client.return_value = mock_client
+
+            result = runner.invoke(app, ["--token", "tk", "lists", "delete", "--list-id", "123"])
+
+        assert result.exit_code == 0
+
+    def test_lists_stats_outputs_dict(self):
+        from acumbamail.cli.main import app
+        with patch("acumbamail.cli.commands.lists.get_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get_list_stats.return_value = {"total_subscribers": 50}
+            mock_get_client.return_value = mock_client
+
+            result = runner.invoke(app, ["--token", "tk", "lists", "stats", "--list-id", "123"])
+
+        assert result.exit_code == 0
+        assert json.loads(result.output)["total_subscribers"] == 50
