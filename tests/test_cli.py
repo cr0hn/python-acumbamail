@@ -257,3 +257,75 @@ class TestCampaignsCommands:
         data = json.loads(result.output)
         assert data["total_delivered"] == 100
         assert data["opened"] == 50
+
+
+class TestWebhooksCommands:
+    def test_webhooks_smtp_get_outputs_webhook(self):
+        from acumbamail.cli.main import app
+        from acumbamail.models import SMTPWebhook
+
+        mock_wh = SMTPWebhook(id=87492, url="https://example.com/wh", active=True,
+                               delivered=True, hard_bounces=False, soft_bounces=False,
+                               complaints=False, opens=False, clicks=False)
+        with patch("acumbamail.cli.commands.webhooks.get_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get_smtp_webhook.return_value = mock_wh
+            mock_get_client.return_value = mock_client
+
+            result = runner.invoke(app, ["--token", "tk", "webhooks", "smtp-get"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["id"] == 87492
+        assert data["active"] is True
+
+    def test_webhooks_smtp_config_returns_id(self):
+        from acumbamail.cli.main import app
+        with patch("acumbamail.cli.commands.webhooks.get_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.config_smtp_webhook.return_value = 87492
+            mock_get_client.return_value = mock_client
+
+            result = runner.invoke(app, [
+                "--token", "tk", "webhooks", "smtp-config",
+                "--url", "https://example.com/wh", "--delivered", "--active"
+            ])
+
+        assert result.exit_code == 0
+        assert json.loads(result.output)["id"] == 87492
+
+    def test_webhooks_list_get_outputs_webhook(self):
+        from acumbamail.cli.main import app
+        from acumbamail.models import ListWebhook
+
+        mock_wh = ListWebhook(id=102650, url="https://example.com/wh", active=False,
+                               subscribes=True, unsubscribes=True,
+                               hard_bounces=False, soft_bounces=False,
+                               complaints=False, opens=False, clicks=False)
+        with patch("acumbamail.cli.commands.webhooks.get_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get_list_webhook.return_value = mock_wh
+            mock_get_client.return_value = mock_client
+
+            result = runner.invoke(app, ["--token", "tk", "webhooks", "list-get", "--list-id", "123"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["id"] == 102650
+        assert data["subscribes"] is True
+
+    def test_webhooks_list_config_returns_id(self):
+        from acumbamail.cli.main import app
+        with patch("acumbamail.cli.commands.webhooks.get_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.config_list_webhook.return_value = 102650
+            mock_get_client.return_value = mock_client
+
+            result = runner.invoke(app, [
+                "--token", "tk", "webhooks", "list-config",
+                "--list-id", "123", "--url", "https://example.com/wh",
+                "--subscribes", "--active"
+            ])
+
+        assert result.exit_code == 0
+        assert json.loads(result.output)["id"] == 102650
