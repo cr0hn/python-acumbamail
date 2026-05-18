@@ -7,6 +7,7 @@ allowing you to manage mailing lists, campaigns, subscribers, and statistics.
 
 import time
 import logging
+import warnings
 
 from typing import List, Dict, Any, Optional
 from datetime import datetime
@@ -1527,14 +1528,19 @@ class AcumbamailClient:
 
     def get_templates_by_name(self, template_name: str) -> List[Template]:
         """
-        Search templates by name.
+        Search templates by partial name.
 
-        Args:
-            template_name (str): Name to search for
-
-        Returns:
-            List[Template]: Matching templates
+        .. warning::
+            This endpoint is documented in the Acumbamail API but the server
+            returns 404 for all calls (verified 2026-05-18). Use get_templates()
+            and filter client-side instead.
         """
+        warnings.warn(
+            "get_templates_by_name: este endpoint está documentado pero no implementado "
+            "en el servidor Acumbamail (retorna 404). Usa get_templates() y filtra en cliente.",
+            UserWarning,
+            stacklevel=2,
+        )
         response = self._call_api("getTemplatesByName", {"template_name": template_name})
         if isinstance(response, list):
             return [Template.from_api(data) for data in response]

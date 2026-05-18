@@ -8,6 +8,7 @@ using async/await patterns.
 
 import asyncio
 import logging
+import warnings
 
 from typing import List, Dict, Any, Optional
 from datetime import datetime
@@ -719,14 +720,23 @@ class AsyncAcumbamailClient:
             AcumbamailValidationError: If neither from_email nor default_sender_email is set
         """
         await self._ensure_client()
-        if not list_ids:
-            raise AcumbamailValidationError("At least one list_id must be specified")
-            
-        if "*|UNSUBSCRIBE_URL|*" not in content:
-            raise AcumbamailValidationError("Campaign content must contain the unsubscribe URL. You have to use the placeholder *|UNSUBSCRIBE_URL|*")
-
         if not from_email and not self.default_sender_email:
             raise AcumbamailValidationError("from_email or default_sender_email is required for creating campaigns")
+
+        if not name or not name.strip():
+            raise AcumbamailValidationError("Campaign name cannot be empty")
+
+        if not subject or not subject.strip():
+            raise AcumbamailValidationError("Campaign subject cannot be empty")
+
+        if not content or not content.strip():
+            raise AcumbamailValidationError("Campaign content cannot be empty")
+
+        if not list_ids:
+            raise AcumbamailValidationError("At least one list_id must be specified")
+
+        if "*|UNSUBSCRIBE_URL|*" not in content:
+            raise AcumbamailValidationError("Campaign content must contain the unsubscribe URL. You have to use the placeholder *|UNSUBSCRIBE_URL|*")
             
         campaign = Campaign(
             id=None,
@@ -776,7 +786,16 @@ class AsyncAcumbamailClient:
         await self._ensure_client()
         if not from_email and not self.default_sender_email:
             raise AcumbamailValidationError("from_email or default_sender_email is required for sending emails")
-            
+
+        if not to_email or '@' not in to_email:
+            raise AcumbamailValidationError("Invalid recipient email address format")
+
+        if not subject or not subject.strip():
+            raise AcumbamailValidationError("Email subject cannot be empty")
+
+        if not content or not content.strip():
+            raise AcumbamailValidationError("Email content cannot be empty")
+
         data = {
             "from_name": from_name or self.default_sender_name,
             "from_email": from_email or self.default_sender_email,
@@ -785,7 +804,7 @@ class AsyncAcumbamailClient:
             "body": content,
             "category": category,
         }
-        
+
         response = await self._call_api("sendOne", data)
         return manage_api_response_id(response)
 
@@ -1240,7 +1259,20 @@ class AsyncAcumbamailClient:
         return await self._call_api("getCampaignOpenersByCountries", {"campaign_id": campaign_id})
 
     async def get_templates_by_name(self, template_name: str) -> List[Template]:
-        """Search templates by name."""
+        """
+        Search templates by partial name.
+
+        .. warning::
+            This endpoint is documented in the Acumbamail API but the server
+            returns 404 for all calls (verified 2026-05-18). Use get_templates()
+            and filter client-side instead.
+        """
+        warnings.warn(
+            "get_templates_by_name: este endpoint está documentado pero no implementado "
+            "en el servidor Acumbamail (retorna 404). Usa get_templates() y filtra en cliente.",
+            UserWarning,
+            stacklevel=2,
+        )
         await self._ensure_client()
         response = await self._call_api("getTemplatesByName", {"template_name": template_name})
         if isinstance(response, list):

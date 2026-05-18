@@ -16,6 +16,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `acumbamail/client.py`: parámetros `str = None` y `Dict[str, Any] = None` corregidos a `Optional[str]` y `Optional[Dict[str, Any]]` en `__init__`, `_call_api`, `add_subscriber`, `create_campaign`, `send_single_email`, `create_campaign_from_template` y `send_certified_email`
 - `acumbamail/aclient.py`: mismos cambios de type hints que en `client.py` aplicados al cliente asíncrono
 
+## [2026-05-18] - Validaciones simétricas async/sync; warning en get_templates_by_name
+
+### Added
+
+- `AsyncAcumbamailClient.create_campaign`: validaciones simétricas al cliente sync:
+  - `name` no puede estar vacío ni ser solo espacios
+  - `subject` no puede estar vacío ni ser solo espacios
+  - `content` no puede estar vacío ni ser solo espacios
+  - `from_email` o `default_sender_email` requerido (ya existía pero reordenado para consistencia)
+- `AsyncAcumbamailClient.send_single_email`: validaciones simétricas al cliente sync:
+  - `to_email` debe contener `@` (formato mínimo de email)
+  - `subject` no puede estar vacío ni ser solo espacios
+  - `content` no puede estar vacío ni ser solo espacios
+- `get_templates_by_name` (sync y async): emite `UserWarning` indicando que el endpoint
+  está documentado pero retorna 404 en el servidor (verificado 2026-05-18); sugiere
+  usar `get_templates()` y filtrar en cliente
+- 11 tests nuevos: `TestAsyncCreateCampaignValidation`, `TestAsyncSendSingleEmailValidation`,
+  `test_emits_user_warning` en sync y async
+
 ## [2026-05-18] - Migrar CI/CD de Poetry a uv con Trusted Publishing; actualizar README
 
 ### Changed
