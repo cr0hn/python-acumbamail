@@ -43,7 +43,15 @@ acumbamail/
 - Models: `from_api(data)` parses API dicts; `to_api_payload()` for write ops (Campaign).
 - Campaigns require `*|UNSUBSCRIBE_URL|*` in content — validated before calling API.
 - `create_list()` requires `default_sender_email` set on client.
+- `utils.py` only exports `manage_api_response_id()` — all other helpers were dead code and removed.
+- `get_templates_by_name()` emits `UserWarning` — the endpoint is documented but returns 404 server-side.
 - CLI: auth via `ACUMBAMAIL_TOKEN` env var or `--token` flag. All output JSON to stdout, errors to stderr + exit 1.
+- New CLI commands must declare their own `--token` Option with `envvar="ACUMBAMAIL_TOKEN"` — the root callback propagates it via `os.environ` but Typer subcommands need their own declaration.
+
+## Spec & Collection
+
+- `acumbamail-openapi.yaml` — OpenAPI 3.0.3, 48 endpoints, schemas reutilizables, ejemplos reales
+- `Acumbamail.postman_collection.json` — 47 endpoints en 4 folders (Subscribers, Campaigns, SMTP, Webhooks)
 
 ## API Implementation Coverage
 
@@ -64,6 +72,9 @@ All endpoints implemented. Intentionally excluded: SMS. Known broken/missing:
 | `deleteSubscriber` | Returns `{"email": "..."}` not `{}` |
 | `getFields` | Returns `{"field_name": "field_type"}` dict |
 | `getSubscribers` | `status` param is int, not string |
+| `getCampaigns` | Returns `[{"campaign_id_str": "campaign_name"}]`, not `[{id: int, ...}]` |
+| `getCampaignOpenersByBrowser/Os` | Returns `[]` (empty list) when no openers, not `{}` |
+| `getTemplatesByName` | Server always returns 404 despite being in official docs; SDK emits `UserWarning` |
 
 ## Models
 
@@ -84,12 +95,23 @@ All endpoints implemented. Intentionally excluded: SMS. Known broken/missing:
 
 Tests use `pytest-httpx` mocks — no real API calls. `asyncio_mode = "auto"` in `pyproject.toml`.
 
+```bash
+uv run pytest                   # 346 unit/structural tests (no network)
+uv run pytest -m contract       # 27 contract tests against real API (needs ACUMBAMAIL_TOKEN)
+uv run pytest -m "not contract" # explicit exclusion
+```
+
 ```
 tests/
 ├── test_models.py                  # dataclass parsing from raw API responses
 ├── test_client_new_methods.py      # sync client (all new methods)
+├── test_client_original.py         # sync client (original/pre-session methods)
 ├── test_aclient_new_methods.py     # async client (mirrors sync tests)
-└── test_cli.py                     # CLI via typer.testing.CliRunner + unittest.mock
+├── test_aclient_original.py        # async client (original methods)
+├── test_cli.py                     # CLI via typer.testing.CliRunner + unittest.mock
+├── test_openapi_structure.py       # OpenAPI 3.0.3 structural validation (no network)
+├── test_openapi_coverage.py        # spec vs SDK endpoint coverage (no network)
+└── test_contracts.py               # real API contract tests (marker: contract)
 ```
 
 ## CLI
