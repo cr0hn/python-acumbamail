@@ -122,6 +122,7 @@ class AutomationClient:
         self._client.close()
 
     def __enter__(self) -> "AutomationClient":
+        self.login()
         return self
 
     def __exit__(self, *args: object) -> None:

@@ -54,6 +54,11 @@ class TestLogin:
         client.login()
         assert client._csrf_token == "new_csrf_456"
 
+    def test_context_manager_calls_login(self, httpx_mock: HTTPXMock):
+        mock_login(httpx_mock)
+        with AutomationClient("user@test.com", "password123") as client:
+            assert client._csrf_token == "csrf_token_123"
+
 
 WORKFLOW_BASIC = {"id": 35925, "name": "test", "description": None, "active": True, "booting": False}
 WORKFLOW_FULL = {

@@ -2,7 +2,7 @@ from __future__ import annotations
 import json
 import os
 import sys
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
 import typer
 

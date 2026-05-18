@@ -26,8 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pyyaml` promoted from dev-only to main dependency.
 - Automation API requires web session auth; public API token does not work.
 
-## [Unreleased]
-
 ## [2026-05-18] - CLI de automatizaciones: list, deploy, export, delete
 
 ### Added
