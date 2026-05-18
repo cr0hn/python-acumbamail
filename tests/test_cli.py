@@ -329,3 +329,67 @@ class TestWebhooksCommands:
 
         assert result.exit_code == 0
         assert json.loads(result.output)["id"] == 102650
+
+
+class TestInstallSkills:
+    def test_install_local_creates_skill_dir(self, tmp_path, monkeypatch):
+        from acumbamail.cli.main import app
+
+        monkeypatch.chdir(tmp_path)
+        result = runner.invoke(app, ["install-skills"])
+
+        assert result.exit_code == 0
+        skill_dir = tmp_path / ".claude" / "skills" / "acumbamail-cli"
+        assert skill_dir.exists()
+        assert (skill_dir / "SKILL.md").exists()
+
+    def test_install_local_skill_md_contains_name(self, tmp_path, monkeypatch):
+        from acumbamail.cli.main import app
+
+        monkeypatch.chdir(tmp_path)
+        runner.invoke(app, ["install-skills"])
+
+        skill_md = tmp_path / ".claude" / "skills" / "acumbamail-cli" / "SKILL.md"
+        content = skill_md.read_text()
+        assert "name: acumbamail-cli" in content
+
+    def test_install_global_creates_skill_in_home(self, tmp_path, monkeypatch):
+        from acumbamail.cli.main import app
+
+        fake_home = tmp_path / "home"
+        fake_home.mkdir()
+        monkeypatch.setattr("pathlib.Path.home", lambda: fake_home)
+
+        result = runner.invoke(app, ["install-skills", "-g"])
+
+        assert result.exit_code == 0
+        skill_dir = fake_home / ".claude" / "skills" / "acumbamail-cli"
+        assert skill_dir.exists()
+        assert (skill_dir / "SKILL.md").exists()
+
+    def test_install_overwrites_existing(self, tmp_path, monkeypatch):
+        from acumbamail.cli.main import app
+
+        monkeypatch.chdir(tmp_path)
+
+        # First install
+        runner.invoke(app, ["install-skills"])
+
+        # Corrupt the skill
+        skill_dir = tmp_path / ".claude" / "skills" / "acumbamail-cli"
+        (skill_dir / "SKILL.md").write_text("corrupted")
+
+        # Second install should overwrite
+        result = runner.invoke(app, ["install-skills"])
+        assert result.exit_code == 0
+        content = (skill_dir / "SKILL.md").read_text()
+        assert "name: acumbamail-cli" in content
+
+    def test_output_message_confirms_path(self, tmp_path, monkeypatch):
+        from acumbamail.cli.main import app
+
+        monkeypatch.chdir(tmp_path)
+        result = runner.invoke(app, ["install-skills"])
+
+        assert "acumbamail-cli" in result.output
+        assert "local" in result.output
