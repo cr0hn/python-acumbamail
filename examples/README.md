@@ -1,22 +1,22 @@
-# Acumbamail SDK — Ejemplos
+# Acumbamail SDK — Examples
 
-Ejemplos listos para ejecutar que demuestran las funcionalidades principales del SDK.
+Ready-to-run examples demonstrating the main features of the SDK.
 
-## Requisitos
+## Requirements
 
 ```bash
 pip install acumbamail
 export ACUMBAMAIL_TOKEN="tu_token_aqui"
 ```
 
-> El token se obtiene en tu cuenta de Acumbamail → Configuración → API.
+> The token can be obtained from your Acumbamail account → Settings → API.
 
-## Ejemplos disponibles
+## Available examples
 
 ### `example-001.py` — Hello World
 
-El ejemplo más sencillo posible: listar tus listas de correo y añadir un suscriptor.
-Punto de entrada recomendado para familiarizarse con el SDK.
+The simplest possible example: list your mailing lists and add a subscriber.
+Recommended starting point for getting familiar with the SDK.
 
 ```bash
 python examples/example-001.py
@@ -24,15 +24,15 @@ python examples/example-001.py
 
 ---
 
-### `sync_example.py` — Cliente síncrono básico
+### `sync_example.py` — Basic synchronous client
 
-Muestra las operaciones más habituales con `AcumbamailClient`:
+Shows the most common operations with `AcumbamailClient`:
 
-- Listar listas (`get_lists`)
-- Añadir suscriptor (`add_subscriber`)
-- Obtener suscriptores (`get_subscribers`)
-- Crear campaña con `*|UNSUBSCRIBE_URL|*` (`create_campaign`)
-- Ver estadísticas de campaña (`get_campaign_total_information`)
+- List mailing lists (`get_lists`)
+- Add a subscriber (`add_subscriber`)
+- Get subscribers (`get_subscribers`)
+- Create a campaign with `*|UNSUBSCRIBE_URL|*` (`create_campaign`)
+- View campaign statistics (`get_campaign_total_information`)
 
 ```bash
 python examples/sync_example.py
@@ -40,10 +40,10 @@ python examples/sync_example.py
 
 ---
 
-### `async_example.py` — Cliente asíncrono
+### `async_example.py` — Asynchronous client
 
-Equivalente a `sync_example.py` usando `AsyncAcumbamailClient` con `async/await`.
-Incluye ejemplo con context manager (recomendado) y sin él.
+Equivalent to `sync_example.py` using `AsyncAcumbamailClient` with `async/await`.
+Includes an example with a context manager (recommended) and without one.
 
 ```bash
 python examples/async_example.py
@@ -51,15 +51,15 @@ python examples/async_example.py
 
 ---
 
-### `campaign_analytics.py` — Análisis de campañas
+### `campaign_analytics.py` — Campaign analytics
 
-Análisis de rendimiento de campañas:
+Campaign performance analysis:
 
-- Listado de campañas (`get_campaigns`)
-- Métricas totales: open rate, click rate, bounces (`get_campaign_total_information`)
-- URLs más clicadas (`get_campaign_clicks`)
-- Aperturas por navegador (`get_campaign_openers_by_browser`)
-- Aperturas por sistema operativo (`get_campaign_openers_by_os`)
+- List campaigns (`get_campaigns`)
+- Aggregate metrics: open rate, click rate, bounces (`get_campaign_total_information`)
+- Most clicked URLs (`get_campaign_clicks`)
+- Opens by browser (`get_campaign_openers_by_browser`)
+- Opens by operating system (`get_campaign_openers_by_os`)
 
 ```bash
 python examples/campaign_analytics.py
@@ -67,13 +67,13 @@ python examples/campaign_analytics.py
 
 ---
 
-### `bulk_operations.py` — Operaciones en masa
+### `bulk_operations.py` — Bulk operations
 
-Gestión eficiente de grandes volúmenes de datos:
+Efficient management of large data volumes:
 
-- Alta de suscriptores en lote (`batch_add_subscribers`)
-- Búsqueda de suscriptores (`search_subscriber`)
-- Suscriptores inactivos con detalle (`get_inactive_subscribers` con `full_info=True`)
+- Batch subscriber sign-up (`batch_add_subscribers`)
+- Search for subscribers (`search_subscriber`)
+- Inactive subscribers with details (`get_inactive_subscribers` with `full_info=True`)
 
 ```bash
 python examples/bulk_operations.py
@@ -83,10 +83,10 @@ python examples/bulk_operations.py
 
 ### `ab_testing.py` — A/B Testing
 
-Crea dos campañas con distintos subjects para la misma lista y compara sus estadísticas
-(`get_campaign_total_information`) para determinar qué variante funciona mejor.
+Creates two campaigns with different subjects for the same list and compares their statistics
+(`get_campaign_total_information`) to determine which variant performs better.
 
-**AVISO:** crea campañas reales en tu cuenta.
+**WARNING:** creates real campaigns in your account.
 
 ```bash
 python examples/ab_testing.py
@@ -94,17 +94,17 @@ python examples/ab_testing.py
 
 ---
 
-### `automated_workflows.py` — Workflows automatizados
+### `automated_workflows.py` — Automated workflows
 
-Flujo completo de automatización:
+Complete automation flow:
 
-1. Crear lista (`create_list`)
-2. Alta masiva de suscriptores (`batch_add_subscribers`)
-3. Crear campaña de bienvenida (`create_campaign`)
-4. Consultar estadísticas (`get_campaign_total_information`)
-5. Configurar webhook de lista (`config_list_webhook` — comentado por defecto)
+1. Create a list (`create_list`)
+2. Bulk subscriber sign-up (`batch_add_subscribers`)
+3. Create a welcome campaign (`create_campaign`)
+4. Query statistics (`get_campaign_total_information`)
+5. Configure a list webhook (`config_list_webhook` — commented out by default)
 
-**AVISO:** crea listas, suscriptores y campañas reales en tu cuenta.
+**WARNING:** creates real lists, subscribers, and campaigns in your account.
 
 ```bash
 python examples/automated_workflows.py
@@ -112,15 +112,15 @@ python examples/automated_workflows.py
 
 ---
 
-### `error_handling.py` — Manejo de errores
+### `error_handling.py` — Error handling
 
-Patrones de gestión de errores del SDK:
+SDK error handling patterns:
 
-- `AcumbamailValidationError` — email inválido, campaña sin `*|UNSUBSCRIBE_URL|*`
-- `AcumbamailAPIError` — errores devueltos por la API
-- `AcumbamailRateLimitError` — límite de peticiones superado (el SDK reintenta automáticamente)
-- Degradación elegante con estrategia de fallback
-- Operaciones en lote con errores parciales
+- `AcumbamailValidationError` — invalid email, campaign missing `*|UNSUBSCRIBE_URL|*`
+- `AcumbamailAPIError` — errors returned by the API
+- `AcumbamailRateLimitError` — request limit exceeded (the SDK retries automatically)
+- Graceful degradation with a fallback strategy
+- Batch operations with partial errors
 
 ```bash
 python examples/error_handling.py
@@ -128,10 +128,10 @@ python examples/error_handling.py
 
 ---
 
-## Notas importantes
+## Important notes
 
-- **Token:** usa siempre `ACUMBAMAIL_TOKEN` (no `ACUMBAMAIL_AUTH_TOKEN`).
-- **UNSUBSCRIBE_URL:** todo contenido de campaña debe incluir `*|UNSUBSCRIBE_URL|*` o la API lo rechazará.
-- **List ID de prueba:** los ejemplos usan `1138335` por defecto; cámbialo por el ID de una lista real de tu cuenta.
-- **Operaciones destructivas:** los ejemplos que crean o borran datos están marcados con el aviso `AVISO`.
-- **Rate limiting:** el SDK reintenta automáticamente las peticiones con HTTP 429 (3 intentos con backoff de 10s).
+- **Token:** always use `ACUMBAMAIL_TOKEN` (not `ACUMBAMAIL_AUTH_TOKEN`).
+- **UNSUBSCRIBE_URL:** all campaign content must include `*|UNSUBSCRIBE_URL|*` or the API will reject it.
+- **Test list ID:** examples use `1138335` by default; replace it with the ID of a real list from your account.
+- **Destructive operations:** examples that create or delete data are marked with the **WARNING** notice.
+- **Rate limiting:** the SDK automatically retries requests that receive HTTP 429 (3 attempts with 10s backoff).

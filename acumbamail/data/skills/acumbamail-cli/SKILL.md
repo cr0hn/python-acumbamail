@@ -21,7 +21,7 @@ from acumbamail import AcumbamailClient
 client = AcumbamailClient(
     auth_token="your_token",
     default_sender_email="sender@domain.com",   # required for campaigns
-    default_sender_name="Mi Empresa",
+    default_sender_name="My Company",
 )
 ```
 
@@ -29,7 +29,7 @@ client = AcumbamailClient(
 
 ## CLI Commands
 
-### `lists` — Listas de suscriptores
+### `lists` — Subscriber Lists
 
 ```bash
 acumbamail lists list
@@ -46,7 +46,7 @@ acumbamail lists stats --list-id 123
 # → {"total_subscribers": 500, "unsubscribed_subscribers": 12, "hard_bounced_subscribers": 3, ...}
 ```
 
-### `subscribers` — Suscriptores
+### `subscribers` — Subscribers
 
 ```bash
 acumbamail subscribers list --list-id 123
@@ -65,16 +65,16 @@ acumbamail subscribers search --query user@example.com
 acumbamail subscribers unsubscribe --list-id 123 --email user@example.com
 # → {"unsubscribed": true, "email": "user@example.com", "list_id": 123}
 
-# Importación masiva desde JSON: [{"email": "a@x.com"}, {"email": "b@x.com", "nombre": "Bob"}]
+# Bulk import from JSON: [{"email": "a@x.com"}, {"email": "b@x.com", "nombre": "Bob"}]
 acumbamail subscribers batch-add --list-id 123 --file subs.json
-acumbamail subscribers batch-add --list-id 123 --file subs.json --update  # actualizar si ya existen
+acumbamail subscribers batch-add --list-id 123 --file subs.json --update  # update if already exists
 # → [{"email": "a@x.com", "subscriber_id": 111}, ...]
 ```
 
-### `campaigns` — Campañas de email
+### `campaigns` — Email Campaigns
 
 ```bash
-# Crear y enviar campaña (envío inmediato si no se especifica --scheduled-at)
+# Create and send a campaign (immediate send if --scheduled-at is not specified)
 acumbamail campaigns create \
   --name "Newsletter Mayo" \
   --subject "Novedades de este mes" \
@@ -84,73 +84,73 @@ acumbamail campaigns create \
   --from-name "Mi Empresa"
 # → {"id": 3294239, "name": "...", "subject": "...", "from_email": "...", "list_ids": [...]}
 
-# HTML inline
+# Inline HTML
 acumbamail campaigns create --name "Aviso" --subject "Importante" \
   --html '<h1>Hola</h1><a href="*|UNSUBSCRIBE_URL|*">Baja</a>' \
   --list-id 1138335 --from-email sender@domain.com
 
-# Programar envío
+# Schedule send
 acumbamail campaigns create --name "Newsletter" --subject "..." \
   --html-file email.html --list-id 1138335 \
   --scheduled-at "2026-06-01 09:00"
 
-# Múltiples listas (repetir --list-id)
+# Multiple lists (repeat --list-id)
 acumbamail campaigns create --name "Promo" --subject "Oferta" \
   --html-file promo.html --list-id 123 --list-id 456
 
-# Listar campañas — SOLO devuelve id y name (limitación de la API)
+# List campaigns — returns id and name ONLY (API limitation)
 acumbamail campaigns list
 # → [{"id": 3294239, "name": "Newsletter #1", "subject": "", "from_email": "", "list_ids": []}, ...]
-# Para ver subject/from_email usa: campaigns info
+# To see subject/from_email use: campaigns info
 
-# Detalle completo de una campaña (subject, from_email, listas, status)
+# Full detail of a campaign (subject, from_email, lists, status)
 acumbamail campaigns info --campaign-id 3294239
 # → {"status": "Sent", "name": "...", "subject": "...", "email_from": "...", "lists": [...]}
 
-# Estadísticas
+# Stats
 acumbamail campaigns stats --campaign-id 3294239
 # → {"total_delivered": 490, "opened": 120, "unique_clicks": 45, "hard_bounces": 8, ...}
 ```
 
-**HTML obligatorio — tag de desuscripción:**
+**Required HTML — unsubscribe tag:**
 
 ```html
-<!-- OBLIGATORIO en todo HTML de campaña -->
+<!-- REQUIRED in all campaign HTML -->
 <a href="*|UNSUBSCRIBE_URL|*">Darse de baja</a>
 ```
 
-**Merge tags disponibles:**
+**Available merge tags:**
 
 ```
-*|UNSUBSCRIBE_URL|*   → URL de baja (único validado — falla si falta)
-*|FNAME|*             → nombre
-*|LNAME|*             → apellido
-*|EMAIL|*             → email del suscriptor
-*|FULLNAME|*          → nombre completo
-*|ARCHIVE_URL|*       → versión online de la campaña
-*|FORWARD_URL|*       → reenviar a un amigo
+*|UNSUBSCRIBE_URL|*   → unsubscribe URL (the only one validated — fails if missing)
+*|FNAME|*             → first name
+*|LNAME|*             → last name
+*|EMAIL|*             → subscriber email
+*|FULLNAME|*          → full name
+*|ARCHIVE_URL|*       → online version of the campaign
+*|FORWARD_URL|*       → forward to a friend
 ```
 
-La API acepta cualquier `*|TAG|*` sin validar — solo `*|UNSUBSCRIBE_URL|*` se comprueba.
+The API accepts any `*|TAG|*` without validation — only `*|UNSUBSCRIBE_URL|*` is checked.
 
-**Errores comunes en campaigns create:**
-- `el HTML no contiene el tag de desuscripción` → añade `*|UNSUBSCRIBE_URL|*`
-- `el email del remitente no está verificado` → verifica en https://acumbamail.com/app/account/senders/
-- `from_email or default_sender_email is required` → añade `--from-email`
+**Common errors in campaigns create:**
+- `el HTML no contiene el tag de desuscripción` → add `*|UNSUBSCRIBE_URL|*`
+- `el email del remitente no está verificado` → verify at https://acumbamail.com/app/account/senders/
+- `from_email or default_sender_email is required` → add `--from-email`
 
-**Limitaciones de la API de campañas:**
-- `campaigns list` solo devuelve id+name (la API no da más en el listado)
-- No se pueden **borrar** campañas por API — solo desde el panel web
-- No se pueden **cancelar** campañas programadas por API — solo desde el panel web
-- `pre_header` y `tracking_domain` se aceptan al crear pero NO aparecen en `campaigns info`
-- `send_single_email` requiere plan SMTP (retorna 401 sin él)
+**Campaign API limitations:**
+- `campaigns list` only returns id+name (the API does not provide more in the listing)
+- Campaigns cannot be **deleted** via API — only from the web panel
+- Scheduled campaigns cannot be **cancelled** via API — only from the web panel
+- `pre_header` and `tracking_domain` are accepted on creation but do NOT appear in `campaigns info`
+- `send_single_email` requires an SMTP plan (returns 401 without it)
 
 ### `webhooks` — Webhooks
 
 ```bash
 acumbamail webhooks smtp-get
 acumbamail webhooks smtp-config --url https://myapp.com/hooks/smtp --delivered --hard-bounce --active
-acumbamail webhooks smtp-config --url https://... --no-active  # deshabilitar
+acumbamail webhooks smtp-config --url https://... --no-active  # disable
 
 acumbamail webhooks list-get --list-id 123
 acumbamail webhooks list-config --list-id 123 --url https://myapp.com/hooks/list \
@@ -159,22 +159,22 @@ acumbamail webhooks list-config --list-id 123 --url https://myapp.com/hooks/list
 
 ---
 
-## SDK Python — métodos sin CLI
+## Python SDK — Methods Without CLI
 
-Estos métodos existen en el cliente Python pero no tienen comando CLI:
+These methods exist in the Python client but have no CLI command:
 
 ### Templates
 
 ```python
-# Listar templates (incluye los auto-generados de campañas con available=False)
+# List templates (includes auto-generated campaign templates with available=False)
 templates = client.get_templates()
 # → [Template(id=123, name="Welcome", content="..."), ...]
-# Quirk: la API no devuelve content en el listado — Template.content = "" salvo al crear
+# Quirk: the API does not return content in the listing — Template.content = "" unless just created
 
-# Filtrar solo los disponibles
+# Filter only available ones
 available = [t for t in client.get_templates() if t.id]
 
-# Crear template
+# Create template
 tmpl = client.create_template(
     template_name="mi-plantilla",
     html_content="<h1>Hola *|FNAME|*</h1><a href='*|UNSUBSCRIBE_URL|*'>Baja</a>",
@@ -182,26 +182,26 @@ tmpl = client.create_template(
 )
 # → Template(id=9493654, name="mi-plantilla", content="...")
 
-# Duplicar template
+# Duplicate template
 copia = client.duplicate_template(
     template_name="mi-plantilla-copia",
     origin_template_id=9493654,
 )
 # → Template(id=9493655, name="mi-plantilla-copia", content="")
-# Quirk: content="" en el objeto devuelto (no se recupera del servidor)
+# Quirk: content="" in the returned object (not retrieved from the server)
 
-# get_templates_by_name() NO funciona — el servidor devuelve 404 siempre
+# get_templates_by_name() does NOT work — the server always returns 404
 ```
 
-### Suscriptores — métodos avanzados
+### Subscribers — Advanced Methods
 
 ```python
-# Detalles completos de un suscriptor
+# Full details of a subscriber
 details = client.get_subscriber_details(list_id=1138335, subscriber_email="user@x.com")
 # → SubscriberDetails(id=123, email="user@x.com", status="active", create_date=..., fields={...})
-# Quirk: list_id queda None en el objeto (no viene en la respuesta de la API)
+# Quirk: list_id is None in the object (not included in the API response)
 
-# Suscriptores inactivos (bajas, bounces) en un rango de fechas
+# Inactive subscribers (unsubscribes, bounces) in a date range
 from datetime import datetime
 inactive = client.get_inactive_subscribers(
     list_id=1138335,
@@ -210,7 +210,7 @@ inactive = client.get_inactive_subscribers(
 )
 # → [InactiveSubscriber(email="user@x.com", reason=3, reason_date=...)]
 
-# Con full_info=False (más rápido): devuelve solo emails
+# With full_info=False (faster): returns emails only
 emails = client.get_inactive_subscribers(
     list_id=1138335,
     date_from=datetime(2024, 1, 1),
@@ -219,64 +219,64 @@ emails = client.get_inactive_subscribers(
 )
 # → ["user1@x.com", "user2@x.com", ...]
 
-# Campos personalizados de una lista
+# Custom fields of a list
 fields = client.get_fields(list_id=1138335)
 # → {"email": "email", "nombre": "char", "-curso >opcion1,opcion2": "combobox"}
-# Quirk: combobox format = "-nombre_campo >opt1,opt2,opt3"
+# Quirk: combobox format = "-field_name >opt1,opt2,opt3"
 
-# Campos con sus TAGs (para merge tags en HTML)
+# Fields with their TAGs (for merge tags in HTML)
 merge_fields = client.get_merge_fields(list_id=1138335)
 # → {"EMAIL": "email", "NOMBRE": "char", "CURSO": "combobox"}
-# Devuelve {TAG: tipo} — diferente a get_fields que devuelve {nombre: tipo}
+# Returns {TAG: type} — different from get_fields which returns {name: type}
 
-# Añadir campo personalizado a una lista
+# Add a custom field to a list
 client.add_merge_tag(list_id=1138335, field_name="telefono", field_type="char")
 
-# Formularios de la lista
+# List forms
 forms = client.get_forms(list_id=1138335)
-# → {} si no hay formularios configurados
+# → {} if no forms are configured
 
-# Borrar todos los suscriptores de una lista (¡destructivo!)
+# Delete all subscribers from a list (destructive!)
 client.delete_all_subscribers(list_id=1138335)
 ```
 
-### Analytics de campañas
+### Campaign Analytics
 
 ```python
 campaign_id = 3294239
 
-# Clics
+# Clicks
 clicks = client.get_campaign_clicks(campaign_id)
 # → [CampaignClick(url="...", clicks=45, unique_clicks=38, click_rate=0.09, ...)]
-# → [] si no hay clics
+# → [] if no clicks
 
-# Aperturas (con detalle por suscriptor)
+# Opens (with per-subscriber detail)
 openers = client.get_campaign_openers(campaign_id)
 # → [CampaignOpener(email="...", opened_at=datetime, ip="...", browser="...", os="...")]
-# → [] si no hay aperturas
+# → [] if no opens
 
-# Links registrados
+# Tracked links
 links = client.get_campaign_links(campaign_id)
-# → [] si no hay datos
+# → [] if no data
 
 # Soft bounces
 bounces = client.get_campaign_soft_bounces(campaign_id)
 # → [CampaignSoftBounce(email="...", bounced_at=..., reason="...")]
-# → [] si no hay datos
+# → [] if no data
 
-# Por browser/OS (devuelven [] si no hay datos — no {})
+# By browser/OS (return [] if no data — not {})
 by_browser = client.get_campaign_openers_by_browser(campaign_id)
 by_os = client.get_campaign_openers_by_os(campaign_id)
 
-# Por país (devuelve {} si no hay datos — diferente a los anteriores que devuelven [])
+# By country (returns {} if no data — different from the above which return [])
 by_country = client.get_campaign_openers_by_countries(campaign_id)
-# → {} vacío, o {"ES": 120, "MX": 45, ...}
+# → {} empty, or {"ES": 120, "MX": 45, ...}
 
-# Por ISP (siempre incluye Gmail/Hotmail/Yahoo/Others aunque sean 0)
+# By ISP (always includes Gmail/Hotmail/Yahoo/Others even if 0)
 by_isp = client.get_campaign_information_by_isp(campaign_id)
 # → {"Gmail": {"opened": 45, "unopened": 120, ...}, "Hotmail": {...}, "Yahoo": {...}, "Others": {...}}
 
-# Estadísticas por rango de fechas (para una LISTA, no una campaña)
+# Stats by date range (for a LIST, not a campaign)
 from datetime import datetime
 stats = client.get_stats_by_date(
     list_id=1138335,
@@ -284,32 +284,32 @@ stats = client.get_stats_by_date(
     date_to=datetime(2024, 12, 31),
 )
 # → {"total_sent": 5000, "opened": 1200, "unique_clicks": 450, "hard_bounces": 30, ...}
-# NOTA: toma list_id (no campaign_id) y devuelve totales del período (no por fecha)
+# NOTE: takes list_id (not campaign_id) and returns totals for the period (not per date)
 ```
 
-### Envío con template
+### Send With Template
 
 ```python
-# Enviar una campaña usando un template existente
+# Send a campaign using an existing template
 campaign = client.send_template_campaign(
     name="Newsletter con template",
     subject="Asunto del email",
     template_id=9493654,
     list_ids=[1138335],
-    from_email="sender@domain.com",  # opcional si hay default
-    from_name="Mi Empresa",           # opcional si hay default
+    from_email="sender@domain.com",  # optional if default is set
+    from_name="Mi Empresa",           # optional if default is set
 )
 ```
 
 ### SMTP
 
 ```python
-# Créditos SMTP disponibles
+# Available SMTP credits
 credits = client.get_smtp_credits()
 # → 499923 (int)
-# Quirk: la API devuelve {"Creditos": int} con C mayúscula — el SDK lo normaliza
+# Quirk: the API returns {"Creditos": int} with capital C — the SDK normalizes it
 
-# Los siguientes requieren plan SMTP activado (retornan 401 sin él):
+# The following require an activated SMTP plan (return 401 without it):
 # client.send_single_email(to_email, subject, content, ...)
 # client.send_emails(...)
 # client.send_certified_email(...)
@@ -318,40 +318,40 @@ credits = client.get_smtp_credits()
 
 ---
 
-## Métodos NO funcionales (bugs del servidor)
+## Non-Functional Methods (Server Bugs)
 
-| Método | Error | Estado |
+| Method | Error | Status |
 |--------|-------|--------|
-| `get_list_segments(list_id)` | 404 — endpoint no existe en el servidor | Inutilizable |
-| `get_list_subs_stats(list_id)` | Timeout — el servidor no responde | Inutilizable |
-| `get_templates_by_name(name)` | 404 — documentado pero no implementado | Inutilizable (emite UserWarning) |
-| `batch_delete_subscribers(...)` | 500 — bug del servidor | Implementado, pero falla |
+| `get_list_segments(list_id)` | 404 — endpoint does not exist on the server | Unusable |
+| `get_list_subs_stats(list_id)` | Timeout — server does not respond | Unusable |
+| `get_templates_by_name(name)` | 404 — documented but not implemented | Unusable (emits UserWarning) |
+| `batch_delete_subscribers(...)` | 500 — server bug | Implemented, but fails |
 
 ---
 
 ## Output Format & jq
 
 ```bash
-# IDs de todas las listas
+# IDs of all lists
 acumbamail lists list | jq '[.[].id]'
 
-# Buscar lista por nombre
+# Find list by name
 acumbamail lists list | jq '.[] | select(.name == "Newsletter")'
 
-# Ver solo IDs de campañas (el list solo devuelve id+name)
+# See campaign IDs only (list only returns id+name)
 acumbamail campaigns list | jq '[.[].id]'
 
-# Tasa de apertura
+# Open rate
 acumbamail campaigns stats --campaign-id 999 | \
   jq '.opened / .total_delivered * 100 | round | tostring + "%"'
 
-# Suscriptores activos de una lista
+# Active subscribers in a list
 acumbamail subscribers list --list-id 123 | jq '[.[] | select(.is_active == true)]'
 ```
 
 ## Common Workflows
 
-### Importar suscriptores desde CSV
+### Import Subscribers From CSV
 
 ```bash
 python3 -c "
@@ -363,10 +363,10 @@ print(json.dumps(rows))
 acumbamail subscribers batch-add --list-id 123 --file subs.json --update
 ```
 
-### Newsletter completa (crear + enviar + ver stats)
+### Full Newsletter (Create + Send + View Stats)
 
 ```bash
-# 1. Crear y enviar
+# 1. Create and send
 acumbamail campaigns create \
   --name "Newsletter $(date +%Y-%m-%d)" \
   --subject "Novedades de esta semana" \
@@ -375,15 +375,15 @@ acumbamail campaigns create \
   --from-email sender@domain.com \
   | jq '{id: .id, name: .name}'
 
-# 2. Ver stats 24h después
+# 2. View stats 24h later
 acumbamail campaigns stats --campaign-id CAMPAIGN_ID | \
   jq '{open_rate: (.opened / .total_delivered * 100 | round | tostring + "%"),
        click_rate: (.unique_clicks / .total_delivered * 100 | round | tostring + "%")}'
 ```
 
-### Instalar skills
+### Install Skills
 
 ```bash
-acumbamail install-skills      # localmente
-acumbamail install-skills -g   # globalmente (~/.claude/skills/)
+acumbamail install-skills      # locally
+acumbamail install-skills -g   # globally (~/.claude/skills/)
 ```

@@ -43,200 +43,200 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pyyaml` promoted from dev-only to main dependency.
 - Automation API requires web session auth; public API token does not work.
 
-## [2026-05-18] - CLI de automatizaciones: list, deploy, export, delete
+## [2026-05-18] - Automations CLI: list, deploy, export, delete
 
 ### Added
 
-- `acumbamail/cli/commands/automations.py`: nuevo módulo CLI con 4 comandos (`list`, `deploy`, `export`, `delete`) usando `AutomationClient`
-- `acumbamail/cli/utils.py`: función `get_automation_client()` que resuelve credenciales desde `--email`/`--password` o `ACUMBAMAIL_EMAIL`/`ACUMBAMAIL_PASSWORD`
-- `acumbamail/cli/main.py`: registrado el grupo `automations` en el CLI principal
-- `acumbamail/__init__.py`: exportados `AutomationClient`, `Automation`, `AutomationNode` en `__all__`
-- `tests/test_automation_cli.py`: 8 tests unitarios (sin red) para todos los comandos
+- `acumbamail/cli/commands/automations.py`: new CLI module with 4 commands (`list`, `deploy`, `export`, `delete`) using `AutomationClient`
+- `acumbamail/cli/utils.py`: `get_automation_client()` function that resolves credentials from `--email`/`--password` or `ACUMBAMAIL_EMAIL`/`ACUMBAMAIL_PASSWORD`
+- `acumbamail/cli/main.py`: registered the `automations` group in the main CLI
+- `acumbamail/__init__.py`: exported `AutomationClient`, `Automation`, `AutomationNode` in `__all__`
+- `tests/test_automation_cli.py`: 8 unit tests (no network) covering all commands
 
-## [2026-05-18] - Alinear versión a 0.2.0, Optional[str] en type hints, exports explícitos en __init__.py
+## [2026-05-18] - Align version to 0.2.0, Optional[str] in type hints, explicit exports in __init__.py
 
 ### Changed
 
-- `pyproject.toml`: versión actualizada a `0.2.0`
-- `acumbamail/__init__.py`: versión actualizada a `0.2.0`; imports cambiados de wildcard (`*`) a explícitos con `__all__` completo
-- `acumbamail/client.py`: parámetros `str = None` y `Dict[str, Any] = None` corregidos a `Optional[str]` y `Optional[Dict[str, Any]]` en `__init__`, `_call_api`, `add_subscriber`, `create_campaign`, `send_single_email`, `create_campaign_from_template` y `send_certified_email`
-- `acumbamail/aclient.py`: mismos cambios de type hints que en `client.py` aplicados al cliente asíncrono
+- `pyproject.toml`: version updated to `0.2.0`
+- `acumbamail/__init__.py`: version updated to `0.2.0`; imports changed from wildcard (`*`) to explicit with full `__all__`
+- `acumbamail/client.py`: parameters `str = None` and `Dict[str, Any] = None` corrected to `Optional[str]` and `Optional[Dict[str, Any]]` in `__init__`, `_call_api`, `add_subscriber`, `create_campaign`, `send_single_email`, `create_campaign_from_template` and `send_certified_email`
+- `acumbamail/aclient.py`: same type hint changes as in `client.py` applied to the async client
 
-## [2026-05-18] - Validaciones simétricas async/sync; warning en get_templates_by_name
+## [2026-05-18] - Symmetric async/sync validations; warning in get_templates_by_name
 
 ### Added
 
-- `AsyncAcumbamailClient.create_campaign`: validaciones simétricas al cliente sync:
-  - `name` no puede estar vacío ni ser solo espacios
-  - `subject` no puede estar vacío ni ser solo espacios
-  - `content` no puede estar vacío ni ser solo espacios
-  - `from_email` o `default_sender_email` requerido (ya existía pero reordenado para consistencia)
-- `AsyncAcumbamailClient.send_single_email`: validaciones simétricas al cliente sync:
-  - `to_email` debe contener `@` (formato mínimo de email)
-  - `subject` no puede estar vacío ni ser solo espacios
-  - `content` no puede estar vacío ni ser solo espacios
-- `get_templates_by_name` (sync y async): emite `UserWarning` indicando que el endpoint
-  está documentado pero retorna 404 en el servidor (verificado 2026-05-18); sugiere
-  usar `get_templates()` y filtrar en cliente
-- 11 tests nuevos: `TestAsyncCreateCampaignValidation`, `TestAsyncSendSingleEmailValidation`,
-  `test_emits_user_warning` en sync y async
+- `AsyncAcumbamailClient.create_campaign`: symmetric validations matching the sync client:
+  - `name` cannot be empty or whitespace-only
+  - `subject` cannot be empty or whitespace-only
+  - `content` cannot be empty or whitespace-only
+  - `from_email` or `default_sender_email` required (already existed but reordered for consistency)
+- `AsyncAcumbamailClient.send_single_email`: symmetric validations matching the sync client:
+  - `to_email` must contain `@` (minimum email format)
+  - `subject` cannot be empty or whitespace-only
+  - `content` cannot be empty or whitespace-only
+- `get_templates_by_name` (sync and async): emits `UserWarning` indicating that the endpoint
+  is documented but returns 404 on the server (verified 2026-05-18); suggests
+  using `get_templates()` and filtering on the client side
+- 11 new tests: `TestAsyncCreateCampaignValidation`, `TestAsyncSendSingleEmailValidation`,
+  `test_emits_user_warning` in sync and async
 
-## [2026-05-18] - fix(examples): actualizar todos los ejemplos a API actual
-
-### Changed
-
-- `examples/sync_example.py`: corregida variable de entorno a `ACUMBAMAIL_TOKEN`; flujo actualizado a `get_lists`, `add_subscriber`, `get_subscribers`, `create_campaign` (con `*|UNSUBSCRIBE_URL|*`), `get_campaign_total_information`; eliminado `pre_header` (no existe en la firma actual)
-- `examples/async_example.py`: mismos cambios que `sync_example.py` pero con `AsyncAcumbamailClient` y `async with`; corregida variable de entorno
-- `examples/campaign_analytics.py`: corregida variable de entorno; añadidos `get_campaign_openers_by_browser` y `get_campaign_openers_by_os`; eliminado análisis de openers por email (usa `get_campaign_openers` que no está en la lista de métodos disponibles); simplificado para usar solo métodos reales del SDK
-- `examples/bulk_operations.py`: reescrito completamente; usa `batch_add_subscribers`, `search_subscriber` y `get_inactive_subscribers(full_info=True)` en lugar de bucles individuales; corregida variable de entorno
-- `examples/ab_testing.py`: simplificado; crea dos campañas con distintos subjects y compara `get_campaign_total_information`; añadido `*|UNSUBSCRIBE_URL|*` en el contenido; eliminada dependencia de `pre_header` inexistente; corregida variable de entorno
-- `examples/automated_workflows.py`: reescrito; usa `create_list`, `batch_add_subscribers`, `create_campaign`, `get_campaign_total_information` y `get_list_webhook`/`config_list_webhook`; añadido `*|UNSUBSCRIBE_URL|*`; corregida variable de entorno
-- `examples/error_handling.py`: reescrito; muestra `AcumbamailValidationError` con email inválido y campaña sin `*|UNSUBSCRIBE_URL|*`, `AcumbamailAPIError`, `AcumbamailRateLimitError`; eliminado `SafeAcumbamailClient` y `CircuitBreaker` (fuera del scope del ejemplo); corregida variable de entorno
-- `examples/example-001.py`: convertido en "Hello World" mínimo con `os.getenv("ACUMBAMAIL_TOKEN")` en lugar de token hardcodeado
-- `examples/README.md`: reescrito completamente; documenta todos los ejemplos con métodos reales, aviso sobre operaciones destructivas, y nota sobre `*|UNSUBSCRIBE_URL|*`
-
-## [2026-05-18] - Migrar CI/CD de Poetry a uv con Trusted Publishing; actualizar README
+## [2026-05-18] - fix(examples): update all examples to current API
 
 ### Changed
 
-- `.github/workflows/publish-to-pypi.yaml`: reescrito para usar `uv` en lugar de Poetry
-  - Separado en dos jobs: `test` y `publish`; Trusted Publishing (OIDC) vía `pypa/gh-action-pypi-publish@release/v1`
-  - Python actualizado de 3.11 a 3.13; uv vía `astral-sh/setup-uv@v4`
-- `README.md`: nueva sección CLI, Features ampliada, Core Methods con 25+ métodos nuevos, sección OpenAPI/Postman
+- `examples/sync_example.py`: corrected env var to `ACUMBAMAIL_TOKEN`; flow updated to `get_lists`, `add_subscriber`, `get_subscribers`, `create_campaign` (with `*|UNSUBSCRIBE_URL|*`), `get_campaign_total_information`; removed `pre_header` (not present in current signature)
+- `examples/async_example.py`: same changes as `sync_example.py` but with `AsyncAcumbamailClient` and `async with`; corrected env var
+- `examples/campaign_analytics.py`: corrected env var; added `get_campaign_openers_by_browser` and `get_campaign_openers_by_os`; removed opener analysis by email (uses `get_campaign_openers` which is not in the list of available methods); simplified to use only real SDK methods
+- `examples/bulk_operations.py`: completely rewritten; uses `batch_add_subscribers`, `search_subscriber` and `get_inactive_subscribers(full_info=True)` instead of individual loops; corrected env var
+- `examples/ab_testing.py`: simplified; creates two campaigns with different subjects and compares `get_campaign_total_information`; added `*|UNSUBSCRIBE_URL|*` in content; removed dependency on non-existent `pre_header`; corrected env var
+- `examples/automated_workflows.py`: rewritten; uses `create_list`, `batch_add_subscribers`, `create_campaign`, `get_campaign_total_information` and `get_list_webhook`/`config_list_webhook`; added `*|UNSUBSCRIBE_URL|*`; corrected env var
+- `examples/error_handling.py`: rewritten; shows `AcumbamailValidationError` with invalid email and campaign without `*|UNSUBSCRIBE_URL|*`, `AcumbamailAPIError`, `AcumbamailRateLimitError`; removed `SafeAcumbamailClient` and `CircuitBreaker` (out of scope for the example); corrected env var
+- `examples/example-001.py`: converted to minimal "Hello World" with `os.getenv("ACUMBAMAIL_TOKEN")` instead of hardcoded token
+- `examples/README.md`: completely rewritten; documents all examples with real methods, warning about destructive operations, and note about `*|UNSUBSCRIBE_URL|*`
 
-## [2026-05-18] - SDK improvements: nuevos parámetros y eliminación de dead code
+## [2026-05-18] - Migrate CI/CD from Poetry to uv with Trusted Publishing; update README
+
+### Changed
+
+- `.github/workflows/publish-to-pypi.yaml`: rewritten to use `uv` instead of Poetry
+  - Split into two jobs: `test` and `publish`; Trusted Publishing (OIDC) via `pypa/gh-action-pypi-publish@release/v1`
+  - Python updated from 3.11 to 3.13; uv via `astral-sh/setup-uv@v4`
+- `README.md`: new CLI section, expanded Features, Core Methods with 25+ new methods, OpenAPI/Postman section
+
+## [2026-05-18] - SDK improvements: new parameters and dead code removal
 
 ### Added
 
 - `add_subscriber`: `double_optin: bool = False`, `update_subscriber: bool = False`
 - `get_subscribers`: `block_index: int = 0`, `all_fields: bool = False`, `complete_json: bool = False`
 - `get_list_subs_stats`: `block_index: int = 0`
-- 22 tests nuevos cubriendo los nuevos parámetros (sync + async)
+- 22 new tests covering the new parameters (sync + async)
 
 ### Removed
 
-- `utils.py`: eliminadas 8 funciones dead code
+- `utils.py`: removed 8 dead code functions
 
-## [2026-05-18] - Tests para métodos originales del SDK (pre-sesión)
-
-### Added
-
-- `tests/test_client_original.py`: 85 tests del cliente síncrono (get_lists, create_list, get_subscribers, add_subscriber, delete_subscriber, create_campaign, send_single_email, get_templates, create_template, y más)
-- `tests/test_aclient_original.py`: 80 tests del cliente asíncrono (espejo del síncrono)
-
-## [2026-05-18] - Tests de calidad y contract testing del OpenAPI spec
+## [2026-05-18] - Tests for original SDK methods (pre-session)
 
 ### Added
 
-- `tests/test_openapi_structure.py`: 16 tests de validación estructural del YAML (sin red)
-  - Validación oficial OpenAPI 3.0.3, tags, paths, schemas, $ref internos, conteos
-- `tests/test_openapi_coverage.py`: 7 tests de cobertura spec vs SDK (sin red)
-  - Verifica que todos los endpoints del SDK están en el spec y viceversa
-  - Documenta endpoints SDK pendientes de spec (`getTemplatesByName`)
-- `tests/test_contracts.py`: 27 tests de contract testing real contra la API
-  - Listas, suscriptores, campañas, templates, webhooks, SMTP
-  - Marcados con `@pytest.mark.contract`, excluidos por defecto del `uv run pytest`
-- Configuración `pyproject.toml`: marker `contract` + `addopts = "-m 'not contract'"`
+- `tests/test_client_original.py`: 85 tests for the sync client (get_lists, create_list, get_subscribers, add_subscriber, delete_subscriber, create_campaign, send_single_email, get_templates, create_template, and more)
+- `tests/test_aclient_original.py`: 80 tests for the async client (mirror of the sync client)
+
+## [2026-05-18] - Quality tests and contract testing for the OpenAPI spec
+
+### Added
+
+- `tests/test_openapi_structure.py`: 16 structural validation tests for the YAML (no network)
+  - Official OpenAPI 3.0.3 validation, tags, paths, schemas, internal $refs, counts
+- `tests/test_openapi_coverage.py`: 7 spec vs SDK coverage tests (no network)
+  - Verifies that all SDK endpoints are in the spec and vice versa
+  - Documents SDK endpoints pending spec addition (`getTemplatesByName`)
+- `tests/test_contracts.py`: 27 real contract tests against the API
+  - Lists, subscribers, campaigns, templates, webhooks, SMTP
+  - Marked with `@pytest.mark.contract`, excluded by default from `uv run pytest`
+- `pyproject.toml` configuration: `contract` marker + `addopts = "-m 'not contract'"`
 
 ### Fixed
 
-- `acumbamail-openapi.yaml`: corregido schema `ListStatsResponse`
-  - Eliminado campo `campaigns_sent` (la API real no lo devuelve)
-  - Añadidos campos reales: `spam_subscribers`, `name`, `create_date`
-  - `campaigns_sent` era requerido en el spec pero nunca aparece en respuestas reales
+- `acumbamail-openapi.yaml`: corrected `ListStatsResponse` schema
+  - Removed field `campaigns_sent` (the real API does not return it)
+  - Added real fields: `spam_subscribers`, `name`, `create_date`
+  - `campaigns_sent` was required in the spec but never appears in real responses
 
-### Discovered (API quirks documentados por contract testing)
+### Discovered (API quirks documented by contract testing)
 
-- `getCampaigns`: devuelve lista de dicts `{campaign_id_str: campaign_name}`, NO una lista de objetos con campo `id`
-- `getCampaignOpenersByBrowser` / `getCampaignOpenersByOs`: devuelven `[]` (lista vacía) cuando no hay openers, no `{}` (dict vacío)
-- `getTemplatesByName`: presente en el SDK pero sin documentar en el spec (pendiente)
+- `getCampaigns`: returns a list of dicts `{campaign_id_str: campaign_name}`, NOT a list of objects with an `id` field
+- `getCampaignOpenersByBrowser` / `getCampaignOpenersByOs`: return `[]` (empty list) when there are no openers, not `{}` (empty dict)
+- `getTemplatesByName`: present in the SDK but not documented in the spec (pending)
 
-## [2026-05-18] - OpenAPI spec completo de la API Acumbamail
-
-### Added
-
-- Creado `acumbamail-openapi.yaml`: especificación OpenAPI 3.0.3 completa de la API de Acumbamail
-- 47 endpoints documentados agrupados en 6 tags: Lists, Subscribers, Campaigns, Templates, SMTP, Webhooks
-- Schemas reutilizables: `AuthFields`, `ListInfo`, `SubscriberDetails`, `InactiveSubscriberFull`, `CampaignTotalInfo`, `CampaignClick`, `CampaignOpener`, `SMTPWebhookInfo`, `ListWebhookInfo`, etc.
-- Ejemplos reales en los schemas y respuestas
-- Documentación de comportamientos especiales: bug conocido en `batchDeleteSubscribers` (HTTP 500), clave `Creditos` con mayúscula en `getCreditsSMTP`, `template_id` como string en `duplicateTemplate`, requerimiento de SMTP activo para endpoints de envío
-- Extension `x-rate-limit: "10 requests/minute"` en cada operación
-- Descripciones completas de todos los códigos HTTP de respuesta (200, 201, 400, 401, 404, 429, 500)
-
-## [2026-05-18] - Postman collection completa con todos los endpoints
+## [2026-05-18] - Complete OpenAPI spec for the Acumbamail API
 
 ### Added
 
-- Actualizada `Acumbamail.postman_collection.json` con todos los endpoints de la API:
+- Created `acumbamail-openapi.yaml`: complete OpenAPI 3.0.3 specification for the Acumbamail API
+- 47 endpoints documented grouped into 6 tags: Lists, Subscribers, Campaigns, Templates, SMTP, Webhooks
+- Reusable schemas: `AuthFields`, `ListInfo`, `SubscriberDetails`, `InactiveSubscriberFull`, `CampaignTotalInfo`, `CampaignClick`, `CampaignOpener`, `SMTPWebhookInfo`, `ListWebhookInfo`, etc.
+- Real examples in schemas and responses
+- Documentation of special behaviors: known bug in `batchDeleteSubscribers` (HTTP 500), uppercase `Creditos` key in `getCreditsSMTP`, `template_id` as string in `duplicateTemplate`, SMTP activation requirement for send endpoints
+- Extension `x-rate-limit: "10 requests/minute"` on each operation
+- Full descriptions for all HTTP response codes (200, 201, 400, 401, 404, 429, 500)
+
+## [2026-05-18] - Complete Postman collection with all endpoints
+
+### Added
+
+- Updated `Acumbamail.postman_collection.json` with all API endpoints:
   - **Subscribers** (21 endpoints): getLists, createList, deleteList, getListStats, getListFields, getFields, getForms, getListSegments, getListSubsStats, getMergeFields, getSubscribers, addSubscriber, deleteSubscriber, batchAddSubscribers, batchDeleteSubscribers, deleteAllSubscribers, unsubscribeSubscriber, getSubscriberDetails, searchSubscriber, getInactiveSubscribers, addMergeTag, getCreditsSMTP
   - **Campaigns** (17 endpoints): createCampaign, sendTemplateCampaign, getCampaigns, getCampaignBasicInformation, getCampaignTotalInformation, getCampaignClicks, getCampaignOpeners, getCampaignOpenersByBrowser, getCampaignOpenersByOs, getCampaignOpenersByCountries, getCampaignInformationByISP, getCampaignLinks, getCampaignSoftBounces, getStatsByDate, getTemplates, createTemplate, duplicateTemplate
-  - **SMTP** (4 endpoints, nuevo folder): sendOne, send, sendCertifiedEmail, getEmailStatus
-  - **Webhooks** (4 endpoints, nuevo folder): getSMTPWebhook, configSMTPWebhook, getListWebhook, configListWebhook
-- Añadida variable `template_id` a las variables de la collection
-- Todos los requests incluyen `response_type: "json"` en el body
-- Corregidas URLs incorrectas en requests existentes (getListSegments, getListSubsStats apuntaban a endpoints equivocados)
+  - **SMTP** (4 endpoints, new folder): sendOne, send, sendCertifiedEmail, getEmailStatus
+  - **Webhooks** (4 endpoints, new folder): getSMTPWebhook, configSMTPWebhook, getListWebhook, configListWebhook
+- Added `template_id` variable to collection variables
+- All requests include `response_type: "json"` in the body
+- Fixed incorrect URLs in existing requests (getListSegments, getListSubsStats were pointing to wrong endpoints)
 
-## [2026-05-18] - CLI: comandos de suscriptores, campañas y webhooks
-
-### Added
-
-- Implementado `acumbamail/cli/commands/subscribers.py` con comandos: `list`, `add`, `delete`, `search`, `unsubscribe`, `batch-add`
-- Implementado `acumbamail/cli/commands/campaigns.py` con comandos: `list`, `info`, `stats`
-- Implementado `acumbamail/cli/commands/webhooks.py` con comandos: `smtp-get`, `smtp-config`, `list-get`, `list-config`
-- Añadidos 13 tests TDD en `tests/test_cli.py` (clases `TestSubscribersCommands`, `TestCampaignsCommands`, `TestWebhooksCommands`) — total 118 tests pasando
-
-## [2026-05-18] - CLI: comandos de listas y main.py inicial
+## [2026-05-18] - CLI: subscriber, campaign and webhook commands
 
 ### Added
 
-- Creado `acumbamail/cli/main.py` con la aplicación Typer principal y soporte para opción global `--token`
-- Creado `acumbamail/cli/commands/lists.py` con comandos: `list`, `create`, `delete`, `stats`
-- Creados placeholders `acumbamail/cli/commands/subscribers.py`, `campaigns.py`, `webhooks.py`
-- Añadidos 4 tests en `tests/test_cli.py` (clase `TestListsCommands`) — total 105 tests pasando
+- Implemented `acumbamail/cli/commands/subscribers.py` with commands: `list`, `add`, `delete`, `search`, `unsubscribe`, `batch-add`
+- Implemented `acumbamail/cli/commands/campaigns.py` with commands: `list`, `info`, `stats`
+- Implemented `acumbamail/cli/commands/webhooks.py` with commands: `smtp-get`, `smtp-config`, `list-get`, `list-config`
+- Added 13 TDD tests in `tests/test_cli.py` (classes `TestSubscribersCommands`, `TestCampaignsCommands`, `TestWebhooksCommands`) — total 118 tests passing
 
-## [2026-05-18] - nuevos métodos en AsyncAcumbamailClient y tests async
+## [2026-05-18] - CLI: list commands and initial main.py
 
 ### Added
 
-- Añadidos 22 nuevos métodos al cliente asíncrono `AsyncAcumbamailClient` en `acumbamail/aclient.py`, equivalentes a los del cliente síncrono:
-  - **Suscriptores**: `add_merge_tag`, `batch_add_subscribers`, `batch_delete_subscribers`, `delete_all_subscribers`, `delete_list`, `get_smtp_credits`, `get_fields`, `get_forms`, `get_inactive_subscribers`, `get_subscriber_details`, `search_subscriber`, `unsubscribe_subscriber`
-  - **Campañas**: `send_template_campaign`, `duplicate_template`, `get_campaign_openers_by_countries`, `get_templates_by_name`
+- Created `acumbamail/cli/main.py` with the main Typer application and support for the global `--token` option
+- Created `acumbamail/cli/commands/lists.py` with commands: `list`, `create`, `delete`, `stats`
+- Created placeholder files `acumbamail/cli/commands/subscribers.py`, `campaigns.py`, `webhooks.py`
+- Added 4 tests in `tests/test_cli.py` (class `TestListsCommands`) — total 105 tests passing
+
+## [2026-05-18] - New methods in AsyncAcumbamailClient and async tests
+
+### Added
+
+- Added 22 new methods to the async client `AsyncAcumbamailClient` in `acumbamail/aclient.py`, equivalent to those in the sync client:
+  - **Subscribers**: `add_merge_tag`, `batch_add_subscribers`, `batch_delete_subscribers`, `delete_all_subscribers`, `delete_list`, `get_smtp_credits`, `get_fields`, `get_forms`, `get_inactive_subscribers`, `get_subscriber_details`, `search_subscriber`, `unsubscribe_subscriber`
+  - **Campaigns**: `send_template_campaign`, `duplicate_template`, `get_campaign_openers_by_countries`, `get_templates_by_name`
   - **SMTP**: `send_emails`, `send_certified_email`, `get_email_status`
   - **Webhooks**: `get_smtp_webhook`, `get_list_webhook`, `config_smtp_webhook`, `config_list_webhook`
-- Añadidos imports de `BatchSubscriberResult`, `SubscriberDetails`, `InactiveSubscriber`, `SMTPWebhook`, `ListWebhook` al bloque de imports de `.models` en `aclient.py`
-- Creado `tests/test_aclient_new_methods.py` con 43 tests async cubriendo todos los nuevos métodos
+- Added imports for `BatchSubscriberResult`, `SubscriberDetails`, `InactiveSubscriber`, `SMTPWebhook`, `ListWebhook` to the `.models` import block in `aclient.py`
+- Created `tests/test_aclient_new_methods.py` with 43 async tests covering all new methods
 
-## [2026-05-18] - nuevos métodos en AcumbamailClient
+## [2026-05-18] - New methods in AcumbamailClient
 
 ### Added
 
-- Añadidos 28 nuevos métodos al cliente síncrono `AcumbamailClient` en `acumbamail/client.py`:
-  - **Suscriptores**: `add_merge_tag`, `batch_add_subscribers`, `batch_delete_subscribers`, `delete_all_subscribers`, `delete_list`, `get_smtp_credits`, `get_fields`, `get_forms`, `get_inactive_subscribers`, `get_subscriber_details`, `search_subscriber`, `unsubscribe_subscriber`
-  - **Campañas**: `send_template_campaign`, `duplicate_template`, `get_campaign_openers_by_countries`, `get_templates_by_name`
+- Added 28 new methods to the sync client `AcumbamailClient` in `acumbamail/client.py`:
+  - **Subscribers**: `add_merge_tag`, `batch_add_subscribers`, `batch_delete_subscribers`, `delete_all_subscribers`, `delete_list`, `get_smtp_credits`, `get_fields`, `get_forms`, `get_inactive_subscribers`, `get_subscriber_details`, `search_subscriber`, `unsubscribe_subscriber`
+  - **Campaigns**: `send_template_campaign`, `duplicate_template`, `get_campaign_openers_by_countries`, `get_templates_by_name`
   - **SMTP**: `send_emails`, `send_certified_email`, `get_email_status`
   - **Webhooks**: `get_smtp_webhook`, `get_list_webhook`, `config_smtp_webhook`, `config_list_webhook`
-- Añadidos imports de `BatchSubscriberResult`, `SubscriberDetails`, `InactiveSubscriber`, `SMTPWebhook`, `ListWebhook` al bloque de imports de `.models` en `client.py`
+- Added imports for `BatchSubscriberResult`, `SubscriberDetails`, `InactiveSubscriber`, `SMTPWebhook`, `ListWebhook` to the `.models` import block in `client.py`
 
-## [2026-05-18] - models nuevos
+## [2026-05-18] - New models
 
 ### Added
 
-- Añadidos 5 nuevos dataclasses en `acumbamail/models.py`:
-  - `SubscriberDetails`: datos completos de un suscriptor (de `getSubscriberDetails` y `searchSubscriber`), con campos extra en `fields`
-  - `InactiveSubscriber`: suscriptor inactivo (de `getInactiveSubscribers`), con `reason` y `reason_date` opcionales
-  - `SMTPWebhook`: configuración de webhook SMTP (de `getSMTPWebhook`)
-  - `ListWebhook`: configuración de webhook de lista (de `getListWebhook`), con `subscribes` y `unsubscribes`
-  - `BatchSubscriberResult`: resultado de alta por lotes (de `batchAddSubscribers`)
-- Actualizados `__all__` con los nuevos modelos
+- Added 5 new dataclasses in `acumbamail/models.py`:
+  - `SubscriberDetails`: full subscriber data (from `getSubscriberDetails` and `searchSubscriber`), with extra fields in `fields`
+  - `InactiveSubscriber`: inactive subscriber (from `getInactiveSubscribers`), with optional `reason` and `reason_date`
+  - `SMTPWebhook`: SMTP webhook configuration (from `getSMTPWebhook`)
+  - `ListWebhook`: list webhook configuration (from `getListWebhook`), with `subscribes` and `unsubscribes`
+  - `BatchSubscriberResult`: bulk subscription result (from `batchAddSubscribers`)
+- Updated `__all__` with the new models
 
 ## [2026-05-18]
 
 ### Changed
 
-- Migrado el sistema de gestión de dependencias de Poetry a uv
-- Versión mínima de Python elevada de 3.11 a 3.13
-- Cambiado build backend de `poetry-core` a `hatchling`
-- Eliminado `poetry.lock`, generado `uv.lock`
+- Migrated dependency management from Poetry to uv
+- Minimum Python version raised from 3.11 to 3.13
+- Changed build backend from `poetry-core` to `hatchling`
+- Removed `poetry.lock`, generated `uv.lock`
 
 ## [0.1.0] - 2024-03-21
 
