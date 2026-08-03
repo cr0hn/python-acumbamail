@@ -215,7 +215,7 @@ class TestGetInactiveSubscribers:
         """BUG 3: espejo async del rechazo explicito de list_id."""
         with pytest.raises(AcumbamailValidationError):
             await async_client.get_inactive_subscribers(
-                datetime(2025, 1, 1), datetime(2025, 12, 31), list_id=1415406
+                datetime(2025, 1, 1), datetime(2025, 12, 31), list_id=987654
             )
         assert httpx_mock.get_requests() == []
 

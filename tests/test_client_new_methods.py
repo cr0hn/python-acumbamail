@@ -218,7 +218,7 @@ class TestGetInactiveSubscribers:
         que filtra, y sin llegar a llamar a la API."""
         with pytest.raises(AcumbamailValidationError):
             client.get_inactive_subscribers(
-                datetime(2025, 1, 1), datetime(2025, 12, 31), list_id=1415406
+                datetime(2025, 1, 1), datetime(2025, 12, 31), list_id=987654
             )
         assert httpx_mock.get_requests() == []
 

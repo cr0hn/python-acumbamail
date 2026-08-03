@@ -37,6 +37,7 @@
   - [Templates](#templates)
   - [SMTP Transactional](#smtp-transactional)
   - [Webhooks](#webhooks)
+- [What the API doesn't show you](#what-the-api-doesnt-show-you)
 - [Error Handling](#error-handling)
 - [Claude Code Skill](#claude-code-skill)
 - [n8n Integration](#n8n-integration)
@@ -245,6 +246,8 @@ $ acumbamail lists delete --list-id 123
 $ acumbamail lists stats --list-id 123
 
 $ acumbamail subscribers list --list-id 123
+$ acumbamail subscribers list --status inactive          # unsubscribes + bounces, account-wide
+$ acumbamail subscribers check --list-id 123 --email user@example.com
 $ acumbamail subscribers add --list-id 123 --email user@example.com
 $ acumbamail subscribers delete --list-id 123 --email user@example.com
 $ acumbamail subscribers search --query user@example.com
@@ -359,15 +362,17 @@ Supported step types: `email_template`, `delay`, `condition`, `until`, `webhook`
 
 | Method | Description |
 |--------|-------------|
-| `get_subscribers(list_id, ...)` | Paginated subscriber list |
+| `get_subscribers(list_id, ...)` | Paginated subscriber list — **active only** |
 | `add_subscriber(email, list_id, fields, double_optin, update_subscriber)` | Add one subscriber |
 | `delete_subscriber(email, list_id)` | Permanently remove |
 | `unsubscribe_subscriber(list_id, email)` | Mark as unsubscribed without deleting |
 | `batch_add_subscribers(list_id, subscribers_data, update_subscriber)` | Bulk add |
 | `delete_all_subscribers(list_id)` | Remove all (background process) |
 | `get_subscriber_details(list_id, subscriber_email)` | Full subscriber record |
-| `search_subscriber(query)` | Search across all lists |
-| `get_inactive_subscribers(list_id, date_from, date_to, full_info)` | Inactive subscribers in a date range |
+| `search_subscriber(query)` | Search across all lists — active and unsubscribed only |
+| `get_inactive_subscribers(date_from, date_to, full_info)` | Unsubscribes and bounces in a date range — **account-wide, no list filter** |
+
+> **Before you conclude "this email isn't in the list", read [What the API doesn't show you](#what-the-api-doesnt-show-you).** Three of these methods return incomplete answers by design, and none of them tell you so.
 
 ### Campaigns
 
@@ -418,6 +423,30 @@ Supported step types: `email_template`, `delay`, `condition`, `until`, `webhook`
 | `config_smtp_webhook(callback_url, ...)` | Set SMTP webhook |
 | `get_list_webhook(list_id)` | Current list webhook config |
 | `config_list_webhook(list_id, callback_url, ...)` | Set list webhook |
+
+## What the API doesn't show you
+
+Three silences in the Acumbamail API that cost real money if you trust the obvious reading. All three were found the hard way, auditing a list before a send.
+
+**A subscriber list has more people in it than any endpoint will list.** `get_subscribers()` returns active subscribers only. `lists list` reports a `subscribers_count` that also includes unsubscribes and bounces. Compare the two numbers and it looks like subscribers went missing. They didn't: they're inactive, and inactive people are only reachable through a different endpoint.
+
+**That different endpoint is account-wide and lies about it.** `getInactiveSubscribers` accepts a `list_id`, returns HTTP 200, and ignores it. Pass a list ID that doesn't exist and it still hands back every inactive address in the account. The records come back with a null list ID, so filtering afterwards isn't possible either. This SDK refuses `list_id` outright rather than let you believe you filtered:
+
+```python
+client.get_inactive_subscribers(list_id=123, date_from=..., date_to=...)
+# AcumbamailValidationError: get_inactive_subscribers() is global to the account...
+```
+
+**And some subscribers are invisible to every listing there is.** Anyone who signed up through a form but never confirmed the double opt-in sits at `status='not verified'` and appears in nothing: not `get_subscribers`, not `search_subscriber`, not `get_inactive_subscribers`, not the CSV exports. The only way to see one is to ask about that exact address:
+
+```console
+$ acumbamail subscribers check --list-id 123 --email someone@example.com
+[{"email": "someone@example.com", "found": true, "status": "not verified", "id": 5774498602, "fields": null}]
+```
+
+Run that before importing a list of addresses you believe are new. "Doesn't appear" is not the same as "isn't there", and adding someone who is already in the list at another status is how people end up emailing addresses they meant to leave alone.
+
+One more thing worth knowing if you read `reason` codes: **1 is a bounce and 3 is a voluntary unsubscribe**. Acumbamail's own documentation had it backwards. Verified by cross-checking 805 inactive records against the CSV exports for the same list. Use `reason_label` and skip the integers.
 
 ## Error Handling
 

@@ -1,6 +1,6 @@
 [project]
 name = "acumbamail"
-version = "0.3.1"
+version = "0.4.0"
 description = "Acumamail SDK client for Python"
 authors = [
     {name = "Daniel Garcia (cr0hn)"}
@@ -22,6 +22,15 @@ acumbamail = "acumbamail.cli.main:app"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+# Working notes and editor/agent config: no business being in a published artifact.
+exclude = [
+    "BUGS-*.md",
+    ".claude",
+    ".vscode/**",
+    ".worktrees",
+]
 
 [dependency-groups]
 dev = [
