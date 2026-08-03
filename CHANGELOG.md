@@ -53,11 +53,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BUG 4** — `subscribers list` only ever returned active subscribers, while
   `lists list`'s `subscribers_count` includes unsubscribes and bounces — comparing
   the two numbers looked like missing subscribers. Added a `--status` flag
-  (`active` (default, unchanged behavior) / `inactive` / `all`) plus `--date-from`/
-  `--date-to` to `subscribers list`, combining `get_subscribers()` with
-  `get_inactive_subscribers()`. The output for `--status inactive/all` documents
-  (in the CLI help and in each row's `note` field) that the inactive side is
-  account-global per BUG 3 — it can include subscribers from other lists.
+  (`active` (default, unchanged behavior) / `inactive`) plus `--date-from`/
+  `--date-to` to `subscribers list`.
+  `--status active` requires `--list-id`; `--status inactive` is account-scoped and
+  **rejects** `--list-id` with an error explaining why, because per BUG 3 the API
+  cannot filter inactive subscribers by list. There is deliberately no `--status all`:
+  it would add one list's actives to the whole account's inactives, and that total
+  means nothing.
+  The first attempt at this fix accepted `--list-id` alongside `--status inactive`
+  and returned all 805 account-wide inactives as if they belonged to that list —
+  reproducing inside our own CLI the exact deception BUG 3 fixed at the API layer.
+  Caught by running it against a list with 16 subscribers and zero inactives.
 - **BUG 5** — subscribers stuck in "not verified" (unconfirmed double opt-in) are
   invisible to `get_subscribers`, `search_subscriber`, `get_inactive_subscribers`,
   and the CSV exports — verified against a real case that only surfaced via

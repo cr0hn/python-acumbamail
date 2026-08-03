@@ -52,12 +52,14 @@ acumbamail lists stats --list-id 123
 acumbamail subscribers list --list-id 123
 # → [{"email": "user@x.com", "list_id": 123, "is_active": true, "fields": {...}}, ...]
 # ⚠️ Solo activos. `lists list` reporta subscribers_count con bajas+bounces incluidos —
-# comparar ambos numeros directamente lleva a creer que faltan suscriptores. Usa --status:
-acumbamail subscribers list --list-id 123 --status inactive   # cruza con getInactiveSubscribers
-acumbamail subscribers list --list-id 123 --status all        # activos + inactivos
-# ⚠️ Los inactivos son GLOBALES DE CUENTA (ver getInactiveSubscribers mas abajo): con
-# --status inactive/all pueden salir inactivos de OTRAS listas, no solo de --list-id.
+# comparar ambos numeros directamente lleva a creer que faltan suscriptores.
+acumbamail subscribers list --status inactive     # bajas+bounces de TODA LA CUENTA
+# ⚠️ --status inactive NO admite --list-id y falla si se lo pasas: getInactiveSubscribers
+# es global de cuenta y los inactivos vienen con list_id nulo, asi que filtrar por lista
+# es imposible. No existe --status all: sumaria una lista con la cuenta entera.
 # --date-from/--date-to (YYYY-MM-DD) acotan el rango; por defecto 2000-01-01 → hoy.
+# Para saber el estado de emails concretos DE UNA LISTA (incluidos los "not verified",
+# que no salen en ningun listado): acumbamail subscribers check --list-id 123 --email x@y.com
 
 acumbamail subscribers add --list-id 123 --email user@example.com
 acumbamail subscribers add --list-id 123 --email user@example.com --fields '{"nombre": "Juan"}'

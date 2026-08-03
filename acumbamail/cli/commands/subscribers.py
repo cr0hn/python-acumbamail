@@ -9,56 +9,78 @@ from acumbamail.cli.utils import get_client, print_json, handle_error
 
 app = typer.Typer(help="Gestión de suscriptores")
 
-_STATUS_CHOICES = ("active", "inactive", "all")
+_STATUS_CHOICES = ("active", "inactive")
 _DEFAULT_INACTIVE_DATE_FROM = "2000-01-01"
+
+# Los dos estados viven en ambitos distintos y la API no permite reconciliarlos:
+# los activos se piden por lista, los inactivos solo a nivel de cuenta. Por eso no
+# hay un --status all: sumarlos daria un total que no significa nada.
+_SCOPE_ERROR = (
+    "Error: --status inactive es de ambito CUENTA y no admite --list-id.\n"
+    "  getInactiveSubscribers es global: la API acepta list_id, responde 200 y lo IGNORA\n"
+    "  (verificado con una lista inexistente, que devolvio igualmente el total de la cuenta).\n"
+    "  Filtrar por lista es imposible: los inactivos vienen con list_id nulo.\n"
+    "  Usa 'subscribers list --status inactive' sin --list-id, o 'subscribers check'\n"
+    "  para consultar emails concretos de una lista."
+)
 
 
 @app.command("list")
 def list_subscribers(
-    list_id: int = typer.Option(..., "--list-id"),
+    list_id: Optional[int] = typer.Option(
+        None, "--list-id", help="Requerido con --status active. Prohibido con --status inactive."
+    ),
     status: str = typer.Option(
         "active",
         "--status",
         help=(
-            "'active' (por defecto, comportamiento previo sin cambios) | 'inactive' | 'all'. "
-            "AVISO: los inactivos vienen de getInactiveSubscribers, que es GLOBAL DE CUENTA "
-            "-- la API de Acumbamail acepta list_id pero lo IGNORA (verificado con una lista "
-            "inexistente que devolvio igualmente el total de la cuenta). Con --status inactive/all "
-            "puedes recibir inactivos de OTRAS listas, no solo de list_id. No hay forma de que "
-            "el CLI ni el SDK filtren esto: es una limitacion de la API."
+            "'active' (por defecto, comportamiento previo sin cambios) exige --list-id. "
+            "'inactive' devuelve bajas y bounces de TODA LA CUENTA y no admite --list-id, "
+            "porque la API no permite filtrarlos por lista. No existe 'all': mezclar ambos "
+            "seria sumar una lista con la cuenta entera."
         ),
     ),
     date_from: Optional[str] = typer.Option(
-        None, "--date-from", help="YYYY-MM-DD. Solo aplica con --status inactive/all. Por defecto: 2000-01-01."
+        None, "--date-from", help="YYYY-MM-DD. Solo aplica con --status inactive. Por defecto: 2000-01-01."
     ),
     date_to: Optional[str] = typer.Option(
-        None, "--date-to", help="YYYY-MM-DD. Solo aplica con --status inactive/all. Por defecto: hoy."
+        None, "--date-to", help="YYYY-MM-DD. Solo aplica con --status inactive. Por defecto: hoy."
     ),
     token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN"),
 ):
-    """Lista suscriptores de una lista.
+    """Lista suscriptores activos de una lista, o inactivos de toda la cuenta.
 
-    Por defecto (--status active) solo devuelve activos, igual que siempre.
-    lists list reporta un subscribers_count que SI incluye bajas y bounces:
-    comparar ese numero contra esta salida sin --status inactive/all da la
-    falsa impresion de que faltan suscriptores.
+    lists list reporta un subscribers_count que SI incluye bajas y bounces, asi que
+    comparar ese numero contra los activos de aqui da la falsa impresion de que faltan
+    suscriptores. La diferencia son inactivos, y solo se pueden ver a nivel de cuenta.
+
+    Ni siquiera --status inactive lo ve todo: los suscriptores en estado 'not verified'
+    (doble opt-in sin confirmar) no salen en ningun listado de la API. Para esos, usa
+    subscribers check con los emails concretos.
     """
     try:
         if status not in _STATUS_CHOICES:
             typer.echo(f"Error: --status debe ser uno de {_STATUS_CHOICES}", err=True)
             raise SystemExit(1)
 
+        if status == "active" and list_id is None:
+            typer.echo("Error: --status active requiere --list-id", err=True)
+            raise SystemExit(1)
+
+        if status == "inactive" and list_id is not None:
+            typer.echo(_SCOPE_ERROR, err=True)
+            raise SystemExit(1)
+
         client = get_client(token)
         out = []
 
-        if status in ("active", "all"):
+        if status == "active":
             subs = client.get_subscribers(list_id)
             out.extend(
                 {"email": s.email, "list_id": s.list_id, "is_active": s.is_active, "fields": s.fields}
                 for s in subs
             )
-
-        if status in ("inactive", "all"):
+        else:
             parsed_from = (
                 datetime.strptime(date_from, "%Y-%m-%d") if date_from
                 else datetime.strptime(_DEFAULT_INACTIVE_DATE_FROM, "%Y-%m-%d")
@@ -73,7 +95,7 @@ def list_subscribers(
                     "fields": None,
                     "reason": i.reason,
                     "reason_label": i.reason_label.value if i.reason_label else None,
-                    "note": "global de cuenta: puede pertenecer a otra lista distinta de list_id",
+                    "scope": "account",
                 }
                 for i in inactives
             )

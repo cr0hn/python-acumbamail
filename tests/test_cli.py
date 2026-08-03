@@ -228,10 +228,9 @@ class TestSubscribersCommands:
         assert data == [{"email": "a@test.com", "list_id": 123, "is_active": True, "fields": {}}]
         mock_client.get_inactive_subscribers.assert_not_called()
 
-    def test_subscribers_list_status_inactive_combines_with_inactive_endpoint(self):
-        """BUG 4: --status inactive cruza con get_inactive_subscribers en vez
-        de devolver solo los activos, que era lo que llevaba a creer que
-        faltaban suscriptores al comparar contra subscribers_count."""
+    def test_subscribers_list_status_inactive_is_account_scoped(self):
+        """BUG 4: --status inactive devuelve los inactivos de la cuenta. Sin
+        --list-id, porque la API no permite filtrarlos por lista."""
         from acumbamail.cli.main import app
         from acumbamail.models import InactiveSubscriber, InactiveReason
 
@@ -244,7 +243,7 @@ class TestSubscribersCommands:
             mock_get_client.return_value = mock_client
 
             result = runner.invoke(app, [
-                "--token", "tk", "subscribers", "list", "--list-id", "123", "--status", "inactive"
+                "--token", "tk", "subscribers", "list", "--status", "inactive"
             ])
 
         assert result.exit_code == 0
@@ -253,29 +252,48 @@ class TestSubscribersCommands:
         assert data[0]["email"] == "gone@test.com"
         assert data[0]["is_active"] is False
         assert data[0]["reason_label"] == "unsubscribed"
+        assert data[0]["scope"] == "account"
         mock_client.get_subscribers.assert_not_called()
 
-    def test_subscribers_list_status_all_combines_active_and_inactive(self):
+    def test_subscribers_list_inactive_with_list_id_is_rejected(self):
+        """El fix del BUG 4 llego a aceptar --list-id junto a --status inactive y
+        devolvia los inactivos de TODA la cuenta como si fueran de esa lista: el
+        mismo engaño que arreglamos en el BUG 3, pero dentro de nuestro CLI.
+        Debe fallar, y el error debe explicar por que."""
         from acumbamail.cli.main import app
-        from acumbamail.models import Subscriber, InactiveSubscriber, InactiveReason
 
-        mock_subs = [Subscriber(email="a@test.com", list_id=123, is_active=True, fields={})]
-        mock_inactives = [
-            InactiveSubscriber(email="gone@test.com", reason=1, reason_label=InactiveReason.BOUNCE),
-        ]
         with patch("acumbamail.cli.commands.subscribers.get_client") as mock_get_client:
             mock_client = MagicMock()
-            mock_client.get_subscribers.return_value = mock_subs
-            mock_client.get_inactive_subscribers.return_value = mock_inactives
             mock_get_client.return_value = mock_client
 
             result = runner.invoke(app, [
-                "--token", "tk", "subscribers", "list", "--list-id", "123", "--status", "all"
+                "--token", "tk", "subscribers", "list", "--list-id", "123", "--status", "inactive"
             ])
 
-        assert result.exit_code == 0
-        data = json.loads(result.output)
-        assert {d["email"] for d in data} == {"a@test.com", "gone@test.com"}
+        assert result.exit_code == 1
+        assert "ambito CUENTA" in result.output
+        assert "no admite --list-id" in result.output
+        # y sobre todo: no ha llegado a pedir datos que luego presentaria mal
+        mock_client.get_inactive_subscribers.assert_not_called()
+
+    def test_subscribers_list_status_all_no_longer_exists(self):
+        """No hay --status all: sumaria los activos de UNA lista con los
+        inactivos de TODA la cuenta, y ese total no significa nada."""
+        from acumbamail.cli.main import app
+
+        with patch("acumbamail.cli.commands.subscribers.get_client"):
+            result = runner.invoke(app, [
+                "--token", "tk", "subscribers", "list", "--list-id", "123", "--status", "all"
+            ])
+        assert result.exit_code == 1
+
+    def test_subscribers_list_active_requires_list_id(self):
+        from acumbamail.cli.main import app
+
+        with patch("acumbamail.cli.commands.subscribers.get_client"):
+            result = runner.invoke(app, ["--token", "tk", "subscribers", "list"])
+        assert result.exit_code == 1
+        assert "requiere --list-id" in result.output
 
     def test_subscribers_list_rejects_invalid_status(self):
         from acumbamail.cli.main import app
