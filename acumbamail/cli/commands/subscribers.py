@@ -119,7 +119,10 @@ def batch_add_subscribers(
             subscribers_data=subscribers_data,
             update_subscriber=update,
         )
-        print_json([{"email": r.email, "subscriber_id": r.subscriber_id} for r in results])
+        print_json([
+            {"email": r.email, "subscriber_id": r.subscriber_id, "status": r.status, "error": r.error}
+            for r in results
+        ])
     except json.JSONDecodeError:
         typer.echo("Error: el fichero debe contener un array JSON válido", err=True)
         raise SystemExit(1)

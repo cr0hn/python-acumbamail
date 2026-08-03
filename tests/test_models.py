@@ -139,3 +139,32 @@ class TestBatchSubscriberResult:
         data = {"test@example.com": "9999999"}
         result = BatchSubscriberResult.from_api(data)
         assert result.subscriber_id == 9999999
+
+    def test_from_api_defaults_status_to_added(self):
+        result = BatchSubscriberResult.from_api({"test@example.com": 1})
+        assert result.status == "added"
+        assert result.error is None
+
+    def test_from_api_nested_error_dict_already_exists(self):
+        """BUG 2: forma real observada cuando el email ya existe en la lista."""
+        data = {"dup@example.com": {"error": "Email already exists in this list"}}
+        result = BatchSubscriberResult.from_api(data)
+        assert result.email == "dup@example.com"
+        assert result.subscriber_id is None
+        assert result.status == "already_existed"
+        assert result.error == "Email already exists in this list"
+
+    def test_from_api_top_level_error_shape(self):
+        data = {"error": {"email": "dup2@example.com", "message": "already exists"}}
+        result = BatchSubscriberResult.from_api(data)
+        assert result.email == "dup2@example.com"
+        assert result.status == "already_existed"
+
+    def test_from_api_unknown_shape_reports_failed_without_raising(self):
+        result = BatchSubscriberResult.from_api({"x@test.com": {"weird": "shape"}})
+        assert result.status in ("failed", "already_existed")
+        assert result.subscriber_id is None
+
+    def test_from_api_never_raises_on_garbage_input(self):
+        result = BatchSubscriberResult.from_api("not-a-dict")
+        assert result.status == "failed"

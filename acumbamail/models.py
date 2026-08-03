@@ -617,18 +617,86 @@ class ListWebhook:
         )
 
 
+def _batch_item_looks_already_existing(message: Any) -> bool:
+    """Heuristic: does this error message describe an email that already exists."""
+    text = str(message).lower()
+    return "already" in text or "exist" in text
+
+
 @dataclass
 class BatchSubscriberResult:
+    """Result for a single item of `batchAddSubscribers`.
+
+    `email`/`subscriber_id` are the original fields (kept for backwards
+    compatibility). `status`/`error` are additive: `status` is one of
+    "added", "already_existed", "failed"; `error` carries whatever the API
+    said about a non-added item.
+    """
     email: str
-    subscriber_id: int
+    subscriber_id: Optional[int] = None
+    status: str = "added"
+    error: Optional[Any] = None
 
     @classmethod
-    def from_api(cls, data: Dict[str, Any]) -> 'BatchSubscriberResult':
-        email, subscriber_id = next(iter(data.items()))
-        return cls(
-            email=email,
-            subscriber_id=int(subscriber_id)
-        )
+    def from_api(cls, data: Any) -> 'BatchSubscriberResult':
+        """
+        Tolerantly parse one item of the batchAddSubscribers response.
+
+        Known/observed shapes:
+        - {"email@x.com": 123}            -> added, subscriber_id=123
+        - {"email@x.com": "123"}          -> added, subscriber_id=123
+        - {"email@x.com": {"error": ...}} -> already_existed/failed, nested error
+        - {"error": {"email": ..., ...}}  -> already_existed/failed, top-level error
+
+        Never raises: any unrecognized shape is reported as status="failed"
+        with the raw payload kept in `error`, so one bad item never aborts
+        the rest of the batch.
+        """
+        if not isinstance(data, dict) or not data:
+            return cls(email="", subscriber_id=None, status="failed", error=data)
+
+        if "error" in data and len(data) == 1:
+            err = data["error"]
+            email = err.get("email", "") if isinstance(err, dict) else ""
+            message = err.get("message", err) if isinstance(err, dict) else err
+            status = "already_existed" if _batch_item_looks_already_existing(message) else "failed"
+            return cls(email=email, subscriber_id=None, status=status, error=message)
+
+        key, value = next(iter(data.items()))
+
+        try:
+            return cls(email=key, subscriber_id=int(value), status="added")
+        except (TypeError, ValueError):
+            pass
+
+        if isinstance(value, dict):
+            message = value.get("error", value.get("message", value))
+            status = "already_existed" if _batch_item_looks_already_existing(message) else "failed"
+            return cls(email=key, subscriber_id=None, status=status, error=message)
+
+        return cls(email=key, subscriber_id=None, status="failed", error=value)
+
+
+class BatchAddSubscribersResult(list):
+    """List of `BatchSubscriberResult` with an additive added/already_existed/failed summary.
+
+    Behaves exactly like the plain list `batch_add_subscribers()` used to
+    return (iterate, index, `len()`) — existing callers keep working
+    unchanged. The `added`/`already_existed`/`failed` properties are purely
+    additive convenience views over the same items.
+    """
+
+    @property
+    def added(self) -> List['BatchSubscriberResult']:
+        return [r for r in self if r.status == "added"]
+
+    @property
+    def already_existed(self) -> List['BatchSubscriberResult']:
+        return [r for r in self if r.status == "already_existed"]
+
+    @property
+    def failed(self) -> List['BatchSubscriberResult']:
+        return [r for r in self if r.status == "failed"]
 
 
 __all__ = [
@@ -644,5 +712,6 @@ __all__ = [
     "InactiveSubscriber",
     "SMTPWebhook",
     "ListWebhook",
-    "BatchSubscriberResult"
-] 
+    "BatchSubscriberResult",
+    "BatchAddSubscribersResult",
+]

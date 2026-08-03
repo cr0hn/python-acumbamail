@@ -72,6 +72,38 @@ class TestBatchAddSubscribers:
         assert results[0].subscriber_id == 111
         assert results[1].email == "b@test.com"
 
+    def test_already_existing_email_does_not_abort_batch(self, client, httpx_mock: HTTPXMock):
+        """BUG 2: un item ya existente venia como dict anidado y reventaba
+        con "int() argument must be a string... not 'dict'", aunque el alta
+        de los demas ya se hubiera hecho. Debe tolerar la forma mixta y
+        seguir devolviendo los demas resultados."""
+        httpx_mock.add_response(
+            url=api_url("batchAddSubscribers"),
+            json=[
+                {"a@test.com": 111},
+                {"b@test.com": {"error": "Email already exists in this list"}},
+            ],
+            status_code=201,
+        )
+        results = client.batch_add_subscribers(
+            LIST_ID,
+            [{"email": "a@test.com"}, {"email": "b@test.com"}],
+        )
+        assert len(results) == 2
+
+        added = results.added
+        assert len(added) == 1
+        assert added[0].email == "a@test.com"
+        assert added[0].subscriber_id == 111
+
+        already_existed = results.already_existed
+        assert len(already_existed) == 1
+        assert already_existed[0].email == "b@test.com"
+        assert already_existed[0].subscriber_id is None
+        assert already_existed[0].error
+
+        assert results.failed == []
+
     def test_sends_update_subscriber_flag(self, client, httpx_mock: HTTPXMock):
         httpx_mock.add_response(url=api_url("batchAddSubscribers"), json=[], status_code=201)
         client.batch_add_subscribers(LIST_ID, [], update_subscriber=True)

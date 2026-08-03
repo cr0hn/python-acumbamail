@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — 2026-08-03
+
+### Fixed
+- **BUG 1** — `manage_api_response_id()` crashed on `createList`'s real response shape
+  `{"list_id": 456}` with `invalid literal for int() with base 10: 'list_id'` (a local
+  regression that cast the dict *key* instead of the value). Now normalizes `'id'`,
+  `'list_id'`, `'subscriber_id'`, `'campaign_id'`, and any key ending in `'_id'` by
+  returning its *value*; keeps the legacy single-entry-dict-where-the-key-is-the-id
+  form as a fallback (only when the value isn't int-castable); raises a clear
+  `ValueError` naming the actual response shape instead of a raw Python exception.
+- **BUG 2** — `batch_add_subscribers()` (sync and async) crashed with
+  `int() argument must be a string, a bytes-like object or a real number, not 'dict'`
+  when an email already existed in the list, even though the subscribers that
+  *didn't* already exist were added successfully. `BatchSubscriberResult.from_api()`
+  now tolerates heterogeneous item shapes (`{email: id}`, `{email: {"error": ...}}`,
+  `{"error": {...}}`) item by item — one bad item never aborts the rest of the batch
+  and never raises. `batch_add_subscribers()` now returns a `BatchAddSubscribersResult`
+  (a plain list subclass — existing `email`/`subscriber_id` fields and iteration/
+  indexing/`len()` behavior unchanged) with additive `.added`/`.already_existed`/
+  `.failed` summary properties. The `batch-add` CLI command additively prints
+  `status`/`error` per item alongside the existing `email`/`subscriber_id` fields.
+- **BUG 6** — the rate-limit backoff logged "Waiting N seconds" but the HTTP read
+  timeout was shorter than that wait, so the retried request died with
+  `The read operation timed out` instead of completing. `_call_api()` (sync and
+  async) now respects the `Retry-After` header when the API sends one (falling back
+  to the previous `10 * retries` schedule otherwise), and raises the retried
+  request's read timeout comfortably above the announced wait time. `AcumbamailClient`
+  gained a `timeout` constructor param (default `30.0`, matching the async client).
+
+### Added
+- `tests/test_utils.py`, `tests/test_rate_limit.py`, plus new cases in
+  `tests/test_models.py`, `tests/test_client_new_methods.py`, and
+  `tests/test_aclient_new_methods.py` covering the three fixes above.
+
 ## [0.3.1] — 2026-05-19
 
 ### Added

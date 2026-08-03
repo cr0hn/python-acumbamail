@@ -15,7 +15,7 @@ from datetime import datetime
 
 import httpx
 
-from .utils import manage_api_response_id
+from .utils import manage_api_response_id, parse_retry_after
 
 from .models import (
     CampaignTotalInformation,
@@ -27,6 +27,7 @@ from .models import (
     CampaignSoftBounce,
     Template,
     BatchSubscriberResult,
+    BatchAddSubscribersResult,
     SubscriberDetails,
     InactiveSubscriber,
     SMTPWebhook,
@@ -259,18 +260,23 @@ class AsyncAcumbamailClient:
 
         url = f"{BASE_URL.rstrip('/')}/{endpoint.lstrip('/')}/"
         retries = 0
+        request_timeout = self.timeout
 
         while retries < max_retries:
             try:
                 if not self._client:
                     raise AcumbamailError("Client not initialized. Use async context manager or call _ensure_client()")
 
-                response = await self._client.post(url, json=data)
+                response = await self._client.post(url, json=data, timeout=request_timeout)
 
                 if response.status_code == 429:
                     retries += 1
-                    wait_time = 10 * retries
+                    wait_time = parse_retry_after(response, default_wait=10 * retries)
                     logger.warning(f"Rate limit exceeded. Waiting {wait_time} seconds. Retry {retries}/{max_retries}")
+                    # Keep the next request's read timeout comfortably above the wait
+                    # we just announced, so the retry itself doesn't die with a read
+                    # timeout shorter than the backoff (this was BUG 6).
+                    request_timeout = max(self.timeout, wait_time + 15)
                     await asyncio.sleep(wait_time)
                     continue
 
@@ -1145,8 +1151,17 @@ class AsyncAcumbamailClient:
         await self._ensure_client()
         await self._call_api("addMergeTag", {"list_id": list_id, "field_name": field_name, "field_type": field_type})
 
-    async def batch_add_subscribers(self, list_id: int, subscribers_data: List[Dict[str, Any]], update_subscriber: bool = False) -> List[BatchSubscriberResult]:
-        """Add multiple subscribers to a mailing list in a single call."""
+    async def batch_add_subscribers(self, list_id: int, subscribers_data: List[Dict[str, Any]], update_subscriber: bool = False) -> BatchAddSubscribersResult:
+        """
+        Add multiple subscribers to a mailing list in a single call.
+
+        Parses the response item by item and tolerates heterogeneous shapes
+        (e.g. an email that already exists comes back as a nested error dict
+        instead of a plain subscriber_id) — one bad item never aborts the
+        rest of the batch and never raises. Returns the same fields as
+        before (email, subscriber_id) plus additive `.added` /
+        `.already_existed` / `.failed` summary properties.
+        """
         await self._ensure_client()
         data = {
             "list_id": list_id,
@@ -1155,7 +1170,13 @@ class AsyncAcumbamailClient:
             "complete_json": 1,
         }
         response = await self._call_api("batchAddSubscribers", data)
-        return [BatchSubscriberResult.from_api(item) for item in response]
+        results = BatchAddSubscribersResult()
+        for item in response:
+            try:
+                results.append(BatchSubscriberResult.from_api(item))
+            except Exception as exc:
+                results.append(BatchSubscriberResult(email="", subscriber_id=None, status="failed", error=str(exc)))
+        return results
 
     async def batch_delete_subscribers(self, list_id: int, email_list: List[str]) -> None:
         """Delete multiple subscribers from a mailing list."""

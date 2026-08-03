@@ -14,7 +14,7 @@ from datetime import datetime
 
 import httpx
 
-from .utils import manage_api_response_id
+from .utils import manage_api_response_id, parse_retry_after
 
 from .models import (
     CampaignTotalInformation,
@@ -26,6 +26,7 @@ from .models import (
     CampaignSoftBounce,
     Template,
     BatchSubscriberResult,
+    BatchAddSubscribersResult,
     SubscriberDetails,
     InactiveSubscriber,
     SMTPWebhook,
@@ -97,6 +98,7 @@ class AcumbamailClient:
         *,
         sender_company: Optional[str] = None,
         sender_country: Optional[str] = None,
+        timeout: float = 30.0,
     ):
         """
         Initialize the Acumbamail client.
@@ -116,21 +118,26 @@ class AcumbamailClient:
             sender_country (str, optional): Country code to use when creating new
                 mailing lists. Defaults to "ES" if not specified. This should be
                 a valid ISO country code (e.g., "US", "ES", "FR").
-        
+            timeout (float, optional): Base HTTP request timeout in seconds.
+                Defaults to 30.0. When a 429 response forces a retry, the
+                timeout for that retry is raised above the backoff wait time
+                itself, so the retried request never dies with a read timeout
+                shorter than the wait we just told the caller about.
+
         Raises:
             AcumbamailValidationError: If the auth_token is empty or invalid
-            
+
         Example:
             >>> # Basic initialization
             >>> client = AcumbamailClient(auth_token="abc123")
-            
+
             >>> # With default sender information
             >>> client = AcumbamailClient(
             ...     auth_token="abc123",
             ...     default_sender_name="My Company",
             ...     default_sender_email="noreply@mycompany.com"
             ... )
-            
+
             >>> # With company information for list creation
             >>> client = AcumbamailClient(
             ...     auth_token="abc123",
@@ -141,13 +148,14 @@ class AcumbamailClient:
         """
         if not auth_token:
             raise AcumbamailValidationError("auth_token is required")
-            
+
         self.auth_token = auth_token
         self.base_url = BASE_URL
         self.default_sender_name = default_sender_name
         self.default_sender_email = default_sender_email
         self.sender_company = sender_company
         self.sender_country = sender_country
+        self.timeout = timeout
 
     def _call_api(self, endpoint: str, data: Optional[Dict[str, Any]] = None, max_retries: int = 3) -> Dict[str, Any]:
         """
@@ -192,16 +200,21 @@ class AcumbamailClient:
 
         url = f"{BASE_URL.rstrip('/')}/{endpoint.lstrip('/')}/"
         retries = 0
+        request_timeout = self.timeout
 
         while retries < max_retries:
             try:
-                with httpx.Client() as client:
+                with httpx.Client(timeout=request_timeout) as client:
                     response = client.post(url, json=data)
 
                 if response.status_code == 429:
                     retries += 1
-                    wait_time = 10 * retries
+                    wait_time = parse_retry_after(response, default_wait=10 * retries)
                     logger.warning(f"Rate limit exceeded. Waiting {wait_time} seconds. Retry {retries}/{max_retries}")
+                    # Keep the next request's read timeout comfortably above the wait
+                    # we just announced, so the retry itself doesn't die with a read
+                    # timeout shorter than the backoff (this was BUG 6).
+                    request_timeout = max(self.timeout, wait_time + 15)
                     time.sleep(wait_time)
                     continue
 
@@ -1315,9 +1328,14 @@ class AcumbamailClient:
         """
         self._call_api("addMergeTag", {"list_id": list_id, "field_name": field_name, "field_type": field_type})
 
-    def batch_add_subscribers(self, list_id: int, subscribers_data: List[Dict[str, Any]], update_subscriber: bool = False) -> List[BatchSubscriberResult]:
+    def batch_add_subscribers(self, list_id: int, subscribers_data: List[Dict[str, Any]], update_subscriber: bool = False) -> BatchAddSubscribersResult:
         """
         Add multiple subscribers to a mailing list in a single call.
+
+        Parses the response item by item and tolerates heterogeneous shapes
+        (e.g. an email that already exists comes back as a nested error dict
+        instead of a plain subscriber_id) — one bad item never aborts the
+        rest of the batch and never raises.
 
         Args:
             list_id (int): ID of the mailing list
@@ -1325,7 +1343,9 @@ class AcumbamailClient:
             update_subscriber (bool): Whether to update existing subscribers
 
         Returns:
-            List[BatchSubscriberResult]: Results for each subscriber
+            BatchAddSubscribersResult: A list of BatchSubscriberResult (same
+                fields as before: email, subscriber_id) with additive
+                `.added` / `.already_existed` / `.failed` summary properties.
         """
         data = {
             "list_id": list_id,
@@ -1334,7 +1354,13 @@ class AcumbamailClient:
             "complete_json": 1,
         }
         response = self._call_api("batchAddSubscribers", data)
-        return [BatchSubscriberResult.from_api(item) for item in response]
+        results = BatchAddSubscribersResult()
+        for item in response:
+            try:
+                results.append(BatchSubscriberResult.from_api(item))
+            except Exception as exc:
+                results.append(BatchSubscriberResult(email="", subscriber_id=None, status="failed", error=str(exc)))
+        return results
 
     def batch_delete_subscribers(self, list_id: int, email_list: List[str]) -> None:
         """
