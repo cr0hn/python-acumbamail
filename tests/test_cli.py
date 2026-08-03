@@ -208,6 +208,171 @@ class TestSubscribersCommands:
         assert len(data) == 2
         assert data[0]["email"] == "x@test.com"
 
+    def test_subscribers_list_default_status_is_unchanged(self):
+        """BUG 4: sin --status, el comportamiento y la forma de salida deben
+        seguir siendo exactamente los de antes -- no debe llamar a
+        get_inactive_subscribers ni añadir claves nuevas."""
+        from acumbamail.cli.main import app
+        from acumbamail.models import Subscriber
+
+        mock_subs = [Subscriber(email="a@test.com", list_id=123, is_active=True, fields={})]
+        with patch("acumbamail.cli.commands.subscribers.get_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get_subscribers.return_value = mock_subs
+            mock_get_client.return_value = mock_client
+
+            result = runner.invoke(app, ["--token", "tk", "subscribers", "list", "--list-id", "123"])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data == [{"email": "a@test.com", "list_id": 123, "is_active": True, "fields": {}}]
+        mock_client.get_inactive_subscribers.assert_not_called()
+
+    def test_subscribers_list_status_inactive_combines_with_inactive_endpoint(self):
+        """BUG 4: --status inactive cruza con get_inactive_subscribers en vez
+        de devolver solo los activos, que era lo que llevaba a creer que
+        faltaban suscriptores al comparar contra subscribers_count."""
+        from acumbamail.cli.main import app
+        from acumbamail.models import InactiveSubscriber, InactiveReason
+
+        mock_inactives = [
+            InactiveSubscriber(email="gone@test.com", reason=3, reason_label=InactiveReason.UNSUBSCRIBED),
+        ]
+        with patch("acumbamail.cli.commands.subscribers.get_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get_inactive_subscribers.return_value = mock_inactives
+            mock_get_client.return_value = mock_client
+
+            result = runner.invoke(app, [
+                "--token", "tk", "subscribers", "list", "--list-id", "123", "--status", "inactive"
+            ])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert len(data) == 1
+        assert data[0]["email"] == "gone@test.com"
+        assert data[0]["is_active"] is False
+        assert data[0]["reason_label"] == "unsubscribed"
+        mock_client.get_subscribers.assert_not_called()
+
+    def test_subscribers_list_status_all_combines_active_and_inactive(self):
+        from acumbamail.cli.main import app
+        from acumbamail.models import Subscriber, InactiveSubscriber, InactiveReason
+
+        mock_subs = [Subscriber(email="a@test.com", list_id=123, is_active=True, fields={})]
+        mock_inactives = [
+            InactiveSubscriber(email="gone@test.com", reason=1, reason_label=InactiveReason.BOUNCE),
+        ]
+        with patch("acumbamail.cli.commands.subscribers.get_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get_subscribers.return_value = mock_subs
+            mock_client.get_inactive_subscribers.return_value = mock_inactives
+            mock_get_client.return_value = mock_client
+
+            result = runner.invoke(app, [
+                "--token", "tk", "subscribers", "list", "--list-id", "123", "--status", "all"
+            ])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert {d["email"] for d in data} == {"a@test.com", "gone@test.com"}
+
+    def test_subscribers_list_rejects_invalid_status(self):
+        from acumbamail.cli.main import app
+        with patch("acumbamail.cli.commands.subscribers.get_client"):
+            result = runner.invoke(app, [
+                "--token", "tk", "subscribers", "list", "--list-id", "123", "--status", "bogus"
+            ])
+        assert result.exit_code == 1
+
+    def test_subscribers_check_sees_not_verified_that_list_does_not(self):
+        """BUG 5: 'subscribers check' es la unica via para ver un 'not
+        verified' -- ni list ni search lo devuelven (verificado contra la
+        API real). Simula ese caso exacto: list solo ve al activo, check ve
+        a los dos porque pregunta por email."""
+        from acumbamail.cli.main import app
+        from acumbamail.models import SubscriberDetails
+
+        def fake_get_subscriber_details(list_id, email):
+            if email == "notverified@test.com":
+                return SubscriberDetails(id=2, email=email, status="not verified")
+            return SubscriberDetails(id=1, email=email, status="active")
+
+        with patch("acumbamail.cli.commands.subscribers.get_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get_subscriber_details.side_effect = fake_get_subscriber_details
+            mock_get_client.return_value = mock_client
+
+            result = runner.invoke(app, [
+                "--token", "tk", "subscribers", "check",
+                "--list-id", "123",
+                "--email", "active@test.com",
+                "--email", "notverified@test.com",
+            ])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        by_email = {d["email"]: d for d in data}
+        assert by_email["active@test.com"]["status"] == "active"
+        assert by_email["notverified@test.com"]["status"] == "not verified"
+        assert by_email["notverified@test.com"]["found"] is True
+
+    def test_subscribers_check_reports_not_found_without_aborting_batch(self):
+        from acumbamail.cli.main import app
+
+        def fake_get_subscriber_details(list_id, email):
+            if email == "missing@test.com":
+                raise Exception("not found")
+            from acumbamail.models import SubscriberDetails
+            return SubscriberDetails(id=1, email=email, status="active")
+
+        with patch("acumbamail.cli.commands.subscribers.get_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get_subscriber_details.side_effect = fake_get_subscriber_details
+            mock_get_client.return_value = mock_client
+
+            result = runner.invoke(app, [
+                "--token", "tk", "subscribers", "check",
+                "--list-id", "123",
+                "--email", "missing@test.com",
+                "--email", "found@test.com",
+            ])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        by_email = {d["email"]: d for d in data}
+        assert by_email["missing@test.com"]["found"] is False
+        assert by_email["found@test.com"]["found"] is True
+
+    def test_subscribers_check_from_file(self, tmp_path):
+        from acumbamail.cli.main import app
+        from acumbamail.models import SubscriberDetails
+
+        emails_file = tmp_path / "emails.json"
+        emails_file.write_text('["a@test.com", "b@test.com"]')
+
+        with patch("acumbamail.cli.commands.subscribers.get_client") as mock_get_client:
+            mock_client = MagicMock()
+            mock_client.get_subscriber_details.side_effect = (
+                lambda list_id, email: SubscriberDetails(id=1, email=email, status="active")
+            )
+            mock_get_client.return_value = mock_client
+
+            result = runner.invoke(app, [
+                "--token", "tk", "subscribers", "check",
+                "--list-id", "123", "--file", str(emails_file),
+            ])
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert {d["email"] for d in data} == {"a@test.com", "b@test.com"}
+
+    def test_subscribers_check_requires_email_or_file(self):
+        from acumbamail.cli.main import app
+        with patch("acumbamail.cli.commands.subscribers.get_client"):
+            result = runner.invoke(app, ["--token", "tk", "subscribers", "check", "--list-id", "123"])
+        assert result.exit_code == 1
+
 
 class TestCampaignsCommands:
     def test_campaigns_list_outputs_json(self):

@@ -51,6 +51,13 @@ acumbamail lists stats --list-id 123
 ```bash
 acumbamail subscribers list --list-id 123
 # → [{"email": "user@x.com", "list_id": 123, "is_active": true, "fields": {...}}, ...]
+# ⚠️ Solo activos. `lists list` reporta subscribers_count con bajas+bounces incluidos —
+# comparar ambos numeros directamente lleva a creer que faltan suscriptores. Usa --status:
+acumbamail subscribers list --list-id 123 --status inactive   # cruza con getInactiveSubscribers
+acumbamail subscribers list --list-id 123 --status all        # activos + inactivos
+# ⚠️ Los inactivos son GLOBALES DE CUENTA (ver getInactiveSubscribers mas abajo): con
+# --status inactive/all pueden salir inactivos de OTRAS listas, no solo de --list-id.
+# --date-from/--date-to (YYYY-MM-DD) acotan el rango; por defecto 2000-01-01 → hoy.
 
 acumbamail subscribers add --list-id 123 --email user@example.com
 acumbamail subscribers add --list-id 123 --email user@example.com --fields '{"nombre": "Juan"}'
@@ -61,6 +68,7 @@ acumbamail subscribers delete --list-id 123 --email user@example.com
 
 acumbamail subscribers search --query user@example.com
 # → [{"email": "user@example.com", "status": "active", "list_id": 123, "id": 456}, ...]
+# ⚠️ NO devuelve "not verified" (doble opt-in sin confirmar), ni por email exacto. Usa `check`.
 
 acumbamail subscribers unsubscribe --list-id 123 --email user@example.com
 # → {"unsubscribed": true, "email": "user@example.com", "list_id": 123}
@@ -69,6 +77,13 @@ acumbamail subscribers unsubscribe --list-id 123 --email user@example.com
 acumbamail subscribers batch-add --list-id 123 --file subs.json
 acumbamail subscribers batch-add --list-id 123 --file subs.json --update  # update if already exists
 # → [{"email": "a@x.com", "subscriber_id": 111}, ...]
+
+# Comprueba el estado REAL de emails concretos (uno a uno, via getSubscriberDetails) —
+# la unica via que ve "not verified". Ni list, ni search, ni get_inactive_subscribers,
+# ni los exports CSV los muestran (verificado 2026-08-03 contra la API real).
+acumbamail subscribers check --list-id 123 --email a@x.com --email b@x.com
+acumbamail subscribers check --list-id 123 --file emails.json   # JSON: ["a@x.com", "b@x.com"]
+# → [{"email": "a@x.com", "found": true, "status": "not verified", "id": 456, "fields": {...}}, ...]
 ```
 
 ### `campaigns` — Email Campaigns
@@ -144,6 +159,7 @@ The API accepts any `*|TAG|*` without validation — only `*|UNSUBSCRIBE_URL|*` 
 - Scheduled campaigns cannot be **cancelled** via API — only from the web panel
 - `pre_header` and `tracking_domain` are accepted on creation but do NOT appear in `campaigns info`
 - `send_single_email` requires an SMTP plan (returns 401 without it)
+- **No segment targeting**: `createCampaign` only accepts `lists` (list IDs). There is NO `segment_id` parameter — confirmed against official API docs. Acumbamail segments exist in the UI only, not in the API.
 
 ### `webhooks` — Webhooks
 
@@ -155,6 +171,91 @@ acumbamail webhooks smtp-config --url https://... --no-active  # disable
 acumbamail webhooks list-get --list-id 123
 acumbamail webhooks list-config --list-id 123 --url https://myapp.com/hooks/list \
   --subscribes --unsubscribes --active
+```
+
+### `automations` — Automation Workflows
+
+Automations use **browser session auth** (not the API token). Run `acumbamail automations login` once — session saved to `~/.config/acumbamail/session.json`, lasts 30 days.
+
+```bash
+# One-time login (opens Chrome — log in visually, CLI captures session)
+acumbamail automations login
+
+# List all automations
+acumbamail automations list
+# → [{"id": 41497, "name": "bienvenida-newsletter", "active": true, ...}]
+
+# Deploy from YAML (creates if new, replaces steps if name matches — idempotent)
+acumbamail automations deploy workflow.yaml
+# → {"workflow_id": 41497, "action": "created", "active": false}
+# ⚠️ ALWAYS deploys as active: false — must activate separately (see quirks)
+
+# Export existing automation to YAML (even ones built in the GUI)
+acumbamail automations export --name "bienvenida-newsletter" > workflow.yaml
+acumbamail automations export --id 41497 > workflow.yaml
+
+# Delete
+acumbamail automations delete --name "bienvenida-newsletter"
+acumbamail automations delete --id 41497
+```
+
+**YAML schema:**
+
+```yaml
+name: bienvenida-newsletter          # unique identifier — used for idempotent deploy
+description: "Optional description"
+
+trigger:
+  list_id: 1406220                   # Acumbamail list ID
+  event: subscriber_added            # subscriber_added | specific_date | segment_added
+  apply_to_existing: false
+
+steps:
+  - type: email_template
+    subject: "¡Bienvenido!"
+    template_id: 9563943             # must exist — create via SDK client.create_template()
+    from_email: sender@domain.com    # must be a verified sender
+    from_name: "Mi Empresa"
+    track_urls: true
+    track_analytics: true
+
+  - type: delay
+    wait: 3
+    unit: days                       # minutes | hours | days
+
+  - type: condition
+    on_match:
+      - type: email_template
+        subject: "Oferta"
+        template_id: 456
+    on_no_match:
+      - type: delay
+        wait: 1
+        unit: days
+
+  - type: webhook
+    url: https://hooks.example.com/notify
+    method: POST                     # GET | POST | PUT | PATCH | DELETE
+
+  - type: update_field
+    field: curso
+    value: curso_a
+
+  - type: move_to
+    list_id: 1138336
+```
+
+**Activate after deploy (CLI deploys as inactive):**
+
+```python
+import json
+from acumbamail.automation_client import AutomationClient
+
+with open('/Users/cr0hn/.config/acumbamail/session.json') as f:
+    s = json.load(f)
+
+client = AutomationClient.from_session(s['sessionid'], s['csrftoken'])
+client.activate_workflow(41497)   # or deactivate_workflow(id)
 ```
 
 ---
@@ -196,23 +297,34 @@ copia = client.duplicate_template(
 ### Subscribers — Advanced Methods
 
 ```python
-# Full details of a subscriber
+# Full details of a subscriber -- the ONLY way to see "not verified" (unconfirmed
+# double opt-in) subscribers. get_subscribers/search_subscriber/get_inactive_subscribers
+# and the CSV exports never show them (verified 2026-08-03 against the real API).
 details = client.get_subscriber_details(list_id=1138335, subscriber_email="user@x.com")
 # → SubscriberDetails(id=123, email="user@x.com", status="active", create_date=..., fields={...})
 # Quirk: list_id is None in the object (not included in the API response)
 
 # Inactive subscribers (unsubscribes, bounces) in a date range
+# ⚠️ GLOBAL DE CUENTA, no per-list, and the API doesn't say so: it silently accepted
+# a list_id parameter in earlier SDK versions, returned HTTP 200, and IGNORED it --
+# verified with a nonexistent list_id, which still returned the account's full total.
+# The SDK now REJECTS list_id explicitly (AcumbamailValidationError) instead of lying
+# about filtering. There is no server-side way to scope this to one list; cross-reference
+# against get_subscribers(list_id) or get_subscriber_details(list_id, email) instead.
 from datetime import datetime
 inactive = client.get_inactive_subscribers(
-    list_id=1138335,
     date_from=datetime(2024, 1, 1),
     date_to=datetime(2024, 12, 31),
+    full_info=True,
 )
-# → [InactiveSubscriber(email="user@x.com", reason=3, reason_date=...)]
+# → [InactiveSubscriber(email="user@x.com", reason=3, reason_date=..., reason_label=InactiveReason.UNSUBSCRIBED)]
+# reason codes (undocumented by Acumbamail, verified 2026-08-03 by cross-referencing
+# 805 real inactives against CSV exports): 1 = hard bounce, 3 = voluntary unsubscribe.
+# reason_label gives the readable InactiveReason enum (BOUNCE/UNSUBSCRIBED/UNKNOWN);
+# the raw int stays available in `reason`.
 
 # With full_info=False (faster): returns emails only
 emails = client.get_inactive_subscribers(
-    list_id=1138335,
     date_from=datetime(2024, 1, 1),
     date_to=datetime(2024, 12, 31),
     full_info=False,
@@ -318,6 +430,39 @@ credits = client.get_smtp_credits()
 
 ---
 
+## Known Quirks & Gotchas
+
+### Automations deploy always creates inactive
+`acumbamail automations deploy` always returns `"active": false` regardless of previous state. Activate via the Python SDK `AutomationClient.from_session()` (see automations section above).
+
+### Multi-account: API token ≠ automation session
+Acumbamail supports multiple accounts/projects. The API token (used for lists/subscribers/campaigns) and the browser session (used for automations) can be for **different accounts**. Symptom: automation deploys successfully but doesn't appear in the web UI, or appears in a different account. Fix: run `acumbamail automations login` while logged into the correct account in Chrome, then redeploy.
+
+### `batch-add` CLI bug
+`acumbamail subscribers batch-add` may fail with `int() argument must be a string... not 'dict'` when the API returns an unexpected response shape. Workaround: add subscribers one by one with `subscribers add` in a loop:
+```bash
+for email in a@x.com b@x.com; do
+  acumbamail subscribers add --list-id 123 --email "$email"
+done
+```
+
+### Hard-bounced subscribers absent from active CSV exports
+Subscribers with hard bounce status exist in the list but are excluded from "active subscribers" exports and deliveries. When comparing Moosend/other-provider exports to Acumbamail active exports, missing emails may be hard bounces — not truly absent. Verify with `subscribers add` (returns "already exists" if present).
+
+### `get_inactive_subscribers` is global to the account, not per-list (verified 2026-08-03)
+The `list_id` parameter looked like a filter but wasn't: the API accepted it, returned HTTP 200, and silently ignored it. Proof: `list_id=99999999` (a list that doesn't exist) still returned the account's full 805 inactive subscribers, same as no filter at all. The SDK now rejects `list_id` outright with `AcumbamailValidationError` — it never worked, so failing loudly beats failing silently. There is no server-side way to scope this endpoint to one list; cross-reference the returned emails against `get_subscribers(list_id)` or `get_subscriber_details(list_id, email)` per candidate instead.
+
+### `reason` codes in `get_inactive_subscribers(full_info=True)` were documented backwards
+`acumbamail-openapi.yaml` used to say reason 3 was a hard bounce. Verified 2026-08-03 by cross-referencing 805 real inactive subscribers against the account's CSV exports: **reason=1 is the hard bounce** (6 cases, none in any export — that's exactly the gap between `subscribers_count` and the CSV totals) and **reason=3 is the voluntary unsubscribe** (799 cases, 795 of them literally present in the unsubscribes CSV). Fixed in the OpenAPI spec and exposed as a readable `InactiveReason` enum (`reason_label` field) on `InactiveSubscriber`, alongside the raw `reason` int.
+
+### "not verified" subscribers are invisible everywhere except `get_subscriber_details`
+A subscriber mid doble-opt-in (never confirmed) does not show up in `get_subscribers`, `search_subscriber`, `get_inactive_subscribers`, or any CSV export — verified against a real case (`wieckcl@yahoo.es` in list 1415406, `status='not verified'` since 2026-07-05, invisible everywhere except a targeted lookup). There is no way to *enumerate* them; the API only reveals the status when you ask about one exact email via `get_subscriber_details(list_id, email)`. The CLI wraps this as `subscribers check --email ... [--email ...] | --file emails.json`, which is the tool to run before concluding "this email isn't in the list" — "doesn't appear" is not the same as "doesn't exist".
+
+### `email_template` step requires existing template
+Cannot deploy an automation with `type: email_template` without a valid `template_id`. Create the template first via Python SDK `client.create_template(...)`, capture the returned `id`, then reference it in the YAML.
+
+---
+
 ## Non-Functional Methods (Server Bugs)
 
 | Method | Error | Status |
@@ -379,6 +524,41 @@ acumbamail campaigns create \
 acumbamail campaigns stats --campaign-id CAMPAIGN_ID | \
   jq '{open_rate: (.opened / .total_delivered * 100 | round | tostring + "%"),
        click_rate: (.unique_clicks / .total_delivered * 100 | round | tostring + "%")}'
+```
+
+### Deploy Welcome Automation (full flow)
+
+```bash
+# 1. Create the email template via Python SDK
+python3 -c "
+from acumbamail import AcumbamailClient
+client = AcumbamailClient(auth_token='TOKEN', default_sender_email='sender@domain.com')
+tmpl = client.create_template(
+    template_name='bienvenida',
+    html_content=open('welcome.html').read(),
+    subject='Asunto por defecto',
+)
+print(tmpl.id)
+"
+# → 9563943
+
+# 2. Write YAML referencing that template_id
+# (see automations YAML schema above)
+
+# 3. Login to automations (once per 30 days)
+acumbamail automations login
+
+# 4. Deploy (creates inactive)
+acumbamail automations deploy bienvenida.yaml
+# → {"workflow_id": 41497, "action": "created", "active": false}
+
+# 5. Activate via SDK
+python3 -c "
+import json
+from acumbamail.automation_client import AutomationClient
+s = json.load(open('/Users/cr0hn/.config/acumbamail/session.json'))
+AutomationClient.from_session(s['sessionid'], s['csrftoken']).activate_workflow(41497)
+"
 ```
 
 ### Install Skills

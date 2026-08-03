@@ -4,6 +4,7 @@ from datetime import datetime
 from acumbamail.models import (
     SubscriberDetails,
     InactiveSubscriber,
+    InactiveReason,
     SMTPWebhook,
     ListWebhook,
     BatchSubscriberResult,
@@ -73,6 +74,26 @@ class TestInactiveSubscriber:
         assert sub.email == "test@test.com"
         assert sub.reason is None
         assert sub.reason_date is None
+
+    def test_reason_label_bounce(self):
+        """BUG 3b: reason=1 es bounce (verificado cruzando 805 inactivos
+        reales contra exports CSV; acumbamail-openapi.yaml lo documentaba
+        al reves)."""
+        sub = InactiveSubscriber.from_api({"email": "b@test.com", "reason": 1})
+        assert sub.reason_label == InactiveReason.BOUNCE
+
+    def test_reason_label_unsubscribed(self):
+        """BUG 3b: reason=3 es baja voluntaria, no hard bounce."""
+        sub = InactiveSubscriber.from_api({"email": "u@test.com", "reason": 3})
+        assert sub.reason_label == InactiveReason.UNSUBSCRIBED
+
+    def test_reason_label_unknown_code(self):
+        sub = InactiveSubscriber.from_api({"email": "w@test.com", "reason": 42})
+        assert sub.reason_label == InactiveReason.UNKNOWN
+
+    def test_reason_label_missing_reason(self):
+        sub = InactiveSubscriber.from_api({"email": "n@test.com"})
+        assert sub.reason_label == InactiveReason.UNKNOWN
 
 
 class TestSMTPWebhook:

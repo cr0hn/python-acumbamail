@@ -6,6 +6,7 @@ Each model represents a different entity in the Acumbamail system and includes m
 to convert between API responses and Python objects.
 """
 
+import enum
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, List, Dict, Any
@@ -541,21 +542,65 @@ class SubscriberDetails:
         )
 
 
+class InactiveReason(str, enum.Enum):
+    """
+    Readable label for the raw ``reason`` int code returned by
+    ``getInactiveSubscribers``.
+
+    The Acumbamail API does not document these codes. Verified 2026-08-03 by
+    cross-referencing 805 real inactive subscribers against the account's CSV
+    exports (see BUGS-2026-08-03.md): ``reason=1`` is a hard bounce (6 cases,
+    none in any export) and ``reason=3`` is a voluntary unsubscribe (799
+    cases, 795 of them literally present in the unsubscribes CSV export).
+
+    .. warning::
+        ``acumbamail-openapi.yaml`` previously documented this backwards
+        (claimed ``reason=3`` was a hard bounce) — that was wrong and has
+        been corrected. Any code or docs written against the old wording
+        had reason 1 and 3 swapped.
+    """
+    BOUNCE = "bounce"
+    UNSUBSCRIBED = "unsubscribed"
+    UNKNOWN = "unknown"
+
+    @classmethod
+    def from_code(cls, code: Optional[int]) -> 'InactiveReason':
+        """Map a raw reason code to a readable label. Unknown/missing codes -> UNKNOWN, never raises."""
+        if code is None:
+            return cls.UNKNOWN
+        mapping: Dict[int, 'InactiveReason'] = {1: cls.BOUNCE, 3: cls.UNSUBSCRIBED}
+        return mapping.get(code, cls.UNKNOWN)
+
+
 @dataclass
 class InactiveSubscriber:
+    """
+    Attributes:
+        email (str): Subscriber's email address
+        reason (Optional[int]): Raw reason code as returned by the API (1 or 3
+            observed so far). Kept for backwards compatibility; prefer
+            reason_label for readable code.
+        reason_date (Optional[datetime]): When the inactivity event happened
+        reason_label (Optional[InactiveReason]): Readable label for `reason`
+            (BOUNCE / UNSUBSCRIBED / UNKNOWN). See InactiveReason docstring
+            for how the mapping was verified.
+    """
     email: str
     reason: Optional[int] = None
     reason_date: Optional[datetime] = None
+    reason_label: Optional[InactiveReason] = None
 
     @classmethod
     def from_api(cls, data: Dict[str, Any]) -> 'InactiveSubscriber':
         reason_date = None
         if 'reason_date' in data and data['reason_date']:
             reason_date = datetime.strptime(data['reason_date'], '%Y/%m/%d %H:%M:%S')
+        reason = int(data['reason']) if 'reason' in data else None
         return cls(
             email=data['email'],
-            reason=int(data['reason']) if 'reason' in data else None,
-            reason_date=reason_date
+            reason=reason,
+            reason_date=reason_date,
+            reason_label=InactiveReason.from_code(reason),
         )
 
 

@@ -211,6 +211,42 @@ class TestGetInactiveSubscribers:
         result = client.get_inactive_subscribers(datetime(2025, 1, 1), datetime(2025, 12, 31))
         assert result == []
 
+    def test_rejects_list_id(self, client, httpx_mock: HTTPXMock):
+        """BUG 3: la API acepta list_id, devuelve 200 y lo IGNORA (verificado
+        con una lista inexistente que devolvio igualmente el total de la
+        cuenta). El SDK debe rechazarlo explicitamente en vez de dejar creer
+        que filtra, y sin llegar a llamar a la API."""
+        with pytest.raises(AcumbamailValidationError):
+            client.get_inactive_subscribers(
+                datetime(2025, 1, 1), datetime(2025, 12, 31), list_id=1415406
+            )
+        assert httpx_mock.get_requests() == []
+
+    def test_reason_label_maps_bounce_and_unsubscribed(self, client, httpx_mock: HTTPXMock):
+        """BUG 3b: reason=1 es bounce y reason=3 es baja voluntaria (al reves
+        de lo que documentaba acumbamail-openapi.yaml), verificado cruzando
+        los inactivos reales contra los exports CSV."""
+        httpx_mock.add_response(
+            url=api_url("getInactiveSubscribers"),
+            json={
+                "inactive_subscribers": [
+                    {"reason": 1, "email": "bounced@test.com"},
+                    {"reason": 3, "email": "unsub@test.com"},
+                    {"reason": 99, "email": "weird@test.com"},
+                ]
+            },
+        )
+        result = client.get_inactive_subscribers(
+            datetime(2025, 1, 1), datetime(2025, 12, 31), full_info=True
+        )
+        from acumbamail.models import InactiveReason
+        assert result[0].reason_label == InactiveReason.BOUNCE
+        assert result[1].reason_label == InactiveReason.UNSUBSCRIBED
+        assert result[2].reason_label == InactiveReason.UNKNOWN
+        # el int crudo sigue accesible, sin romper a quien ya lo usaba
+        assert result[0].reason == 1
+        assert result[1].reason == 3
+
 
 class TestGetSubscriberDetails:
     def test_returns_subscriber_details(self, client, httpx_mock: HTTPXMock):

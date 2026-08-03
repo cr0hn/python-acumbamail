@@ -211,6 +211,32 @@ class TestGetInactiveSubscribers:
         result = await async_client.get_inactive_subscribers(datetime(2025, 1, 1), datetime(2025, 12, 31))
         assert result == []
 
+    async def test_rejects_list_id(self, async_client, httpx_mock: HTTPXMock):
+        """BUG 3: espejo async del rechazo explicito de list_id."""
+        with pytest.raises(AcumbamailValidationError):
+            await async_client.get_inactive_subscribers(
+                datetime(2025, 1, 1), datetime(2025, 12, 31), list_id=1415406
+            )
+        assert httpx_mock.get_requests() == []
+
+    async def test_reason_label_maps_bounce_and_unsubscribed(self, async_client, httpx_mock: HTTPXMock):
+        """BUG 3b: espejo async del mapeo reason=1 bounce / reason=3 unsubscribed."""
+        httpx_mock.add_response(
+            url=api_url("getInactiveSubscribers"),
+            json={
+                "inactive_subscribers": [
+                    {"reason": 1, "email": "bounced@test.com"},
+                    {"reason": 3, "email": "unsub@test.com"},
+                ]
+            },
+        )
+        result = await async_client.get_inactive_subscribers(
+            datetime(2025, 1, 1), datetime(2025, 12, 31), full_info=True
+        )
+        from acumbamail.models import InactiveReason
+        assert result[0].reason_label == InactiveReason.BOUNCE
+        assert result[1].reason_label == InactiveReason.UNSUBSCRIBED
+
 
 class TestGetSubscriberDetails:
     async def test_returns_subscriber_details(self, async_client, httpx_mock: HTTPXMock):

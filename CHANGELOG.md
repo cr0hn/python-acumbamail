@@ -33,11 +33,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to the previous `10 * retries` schedule otherwise), and raises the retried
   request's read timeout comfortably above the announced wait time. `AcumbamailClient`
   gained a `timeout` constructor param (default `30.0`, matching the async client).
+- **BUG 3** — `get_inactive_subscribers()` silently accepted a `list_id` parameter,
+  returned HTTP 200, and ignored it — verified against a nonexistent `list_id=99999999`,
+  which still returned the account's full 805 inactive subscribers. This endpoint is
+  **global to the account**, not scoped by list, and there is no server-side way to
+  filter it. `get_inactive_subscribers()` (sync and async) now takes an explicit
+  `list_id` parameter that, if passed, raises `AcumbamailValidationError` describing
+  the limitation instead of pretending to filter. Cross-reference against
+  `get_subscribers(list_id)` or `get_subscriber_details(list_id, email)` instead.
+- **BUG 3b** — `acumbamail-openapi.yaml` documented the `reason` code in
+  `get_inactive_subscribers(full_info=True)` backwards in two places (claimed
+  `reason=3` was a hard bounce). Verified 2026-08-03 by cross-referencing 805 real
+  inactive subscribers against the account's CSV exports: `reason=1` is the hard
+  bounce (6 cases, none in any export) and `reason=3` is the voluntary unsubscribe
+  (799 cases, 795 of them literally in the unsubscribes CSV). Fixed both spots in
+  the OpenAPI spec. `InactiveSubscriber` gains a new `reason_label` field (an
+  `InactiveReason` enum: `BOUNCE` / `UNSUBSCRIBED` / `UNKNOWN`) computed from the raw
+  code; the raw `reason` int stays untouched for backwards compatibility.
+- **BUG 4** — `subscribers list` only ever returned active subscribers, while
+  `lists list`'s `subscribers_count` includes unsubscribes and bounces — comparing
+  the two numbers looked like missing subscribers. Added a `--status` flag
+  (`active` (default, unchanged behavior) / `inactive` / `all`) plus `--date-from`/
+  `--date-to` to `subscribers list`, combining `get_subscribers()` with
+  `get_inactive_subscribers()`. The output for `--status inactive/all` documents
+  (in the CLI help and in each row's `note` field) that the inactive side is
+  account-global per BUG 3 — it can include subscribers from other lists.
+- **BUG 5** — subscribers stuck in "not verified" (unconfirmed double opt-in) are
+  invisible to `get_subscribers`, `search_subscriber`, `get_inactive_subscribers`,
+  and the CSV exports — verified against a real case that only surfaced via
+  `get_subscriber_details(list_id, email)` on its exact address. There is no way to
+  *enumerate* them; the API only reveals the status per exact email. Documented the
+  limitation in the `get_subscribers`/`search_subscriber` docstrings (sync and async)
+  and added a `acumbamail subscribers check --email ... [--email ...] | --file
+  emails.json --list-id ID` CLI command that reports the real status of each given
+  email via `get_subscriber_details`, including "not verified" ones that no other
+  command can see.
 
 ### Added
 - `tests/test_utils.py`, `tests/test_rate_limit.py`, plus new cases in
   `tests/test_models.py`, `tests/test_client_new_methods.py`, and
-  `tests/test_aclient_new_methods.py` covering the three fixes above.
+  `tests/test_aclient_new_methods.py` covering BUGs 1, 2, and 6.
+- New cases in `tests/test_models.py`, `tests/test_client_new_methods.py`,
+  `tests/test_aclient_new_methods.py`, and `tests/test_cli.py` covering BUGs 3, 3b,
+  4, and 5 (list_id rejection, reason_label mapping, `--status` combining, and
+  `subscribers check` surfacing a "not verified" subscriber that `subscribers list`
+  cannot see).
+- `InactiveReason` enum (`acumbamail.models`), exported from the package root.
 
 ## [0.3.1] — 2026-05-19
 

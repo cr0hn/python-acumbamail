@@ -494,6 +494,15 @@ class AsyncAcumbamailClient:
         Returns:
             List[Subscriber]: A list of Subscriber objects.
 
+        .. warning::
+            Only returns **active** subscribers — silently excludes
+            unsubscribed, bounced, AND "not verified" (unconfirmed double
+            opt-in) subscribers. Verified 2026-08-03: a real "not verified"
+            subscriber did not appear here, nor in search_subscriber(), nor in
+            get_inactive_subscribers(), nor in any CSV export — only
+            get_subscriber_details(list_id, email) with the exact email found
+            it. "Not appearing" does NOT mean "does not exist".
+
         Raises:
             AcumbamailAPIError: If the API request fails or the list doesn't exist
             AcumbamailError: For other errors during the request
@@ -1209,8 +1218,39 @@ class AsyncAcumbamailClient:
         await self._ensure_client()
         return await self._call_api("getForms", {"list_id": list_id})
 
-    async def get_inactive_subscribers(self, date_from: datetime, date_to: datetime, full_info: bool = False) -> List:
-        """Get inactive subscribers within a date range."""
+    async def get_inactive_subscribers(
+        self,
+        date_from: datetime,
+        date_to: datetime,
+        full_info: bool = False,
+        list_id: Optional[int] = None,
+    ) -> List:
+        """
+        Get inactive subscribers within a date range.
+
+        .. warning::
+            Global to the account, NOT scoped by list, and the API doesn't
+            tell you so: it accepts list_id, returns HTTP 200, and silently
+            ignores it (verified 2026-08-03 — a nonexistent list_id=99999999
+            still returned the account's full total). Passing list_id here
+            raises AcumbamailValidationError instead of lying about
+            filtering. To get inactives for one list, cross-reference the
+            emails returned here against get_subscribers(list_id) or
+            get_subscriber_details(list_id, email).
+
+            When full_info=True, InactiveSubscriber.reason_label maps the raw
+            `reason` int to a readable InactiveReason (see its docstring for
+            how the codes were verified: 1=bounce, 3=unsubscribed).
+        """
+        if list_id is not None:
+            raise AcumbamailValidationError(
+                "get_inactive_subscribers() is global to the account: the API accepts "
+                "list_id, returns HTTP 200, and IGNORES it (verified against a "
+                "nonexistent list_id, which still returned the account's full total). "
+                "There is no server-side way to filter by list. Cross-reference the "
+                "returned emails against get_subscribers(list_id) or "
+                "get_subscriber_details(list_id, email) instead."
+            )
         await self._ensure_client()
         data = {
             "date_from": date_from.strftime("%Y-%m-%d"),
@@ -1231,7 +1271,17 @@ class AsyncAcumbamailClient:
         return SubscriberDetails.from_api(data)
 
     async def search_subscriber(self, subscriber: str) -> List[SubscriberDetails]:
-        """Search for a subscriber across all lists."""
+        """
+        Search for a subscriber across all lists.
+
+        .. warning::
+            Does NOT return "not verified" (unconfirmed double opt-in)
+            subscribers, even by exact email. Verified 2026-08-03: a real
+            "not verified" subscriber in list A was invisible here even
+            though the same email had a confirmed subscription in list B —
+            only the list-B entry came back. Use
+            get_subscriber_details(list_id, email) to check a specific list.
+        """
         await self._ensure_client()
         response = await self._call_api("searchSubscriber", {"subscriber": subscriber})
         return [SubscriberDetails.from_api(item) for item in response]

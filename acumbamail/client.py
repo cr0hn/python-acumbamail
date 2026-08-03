@@ -394,6 +394,17 @@ class AcumbamailClient:
         Note:
             This method returns all subscribers in a single API call. For very
             large lists, consider implementing pagination using block_index.
+
+        .. warning::
+            This endpoint only returns **active** subscribers — it silently
+            excludes unsubscribed, bounced, AND "not verified" (unconfirmed
+            double opt-in) subscribers. Verified against a real "not verified"
+            subscriber 2026-08-03: it did not appear here, nor in
+            search_subscriber(), nor in get_inactive_subscribers(), nor in any
+            CSV export — the only way to see it was get_subscriber_details()
+            with its exact email. "Not appearing" does NOT mean "does not
+            exist". If you need to know whether a specific email is present in
+            a list, use get_subscriber_details(list_id, email) directly.
         """
         payload = {
             "list_id": list_id,
@@ -1424,18 +1435,57 @@ class AcumbamailClient:
         """
         return self._call_api("getForms", {"list_id": list_id})
 
-    def get_inactive_subscribers(self, date_from: datetime, date_to: datetime, full_info: bool = False) -> List:
+    def get_inactive_subscribers(
+        self,
+        date_from: datetime,
+        date_to: datetime,
+        full_info: bool = False,
+        list_id: Optional[int] = None,
+    ) -> List:
         """
         Get inactive subscribers within a date range.
+
+        .. warning::
+            This endpoint is **global to the account, not scoped by list**,
+            and the API does not tell you so. Verified 2026-08-03: it accepts
+            a ``list_id`` parameter, returns HTTP 200, and silently ignores
+            it — a nonexistent ``list_id=99999999`` still returned the
+            account's full 805 inactive subscribers. There is no server-side
+            way to filter this endpoint by list.
+
+            Because of that, this method rejects ``list_id`` explicitly with
+            AcumbamailValidationError instead of accepting it and lying about
+            filtering. If you need the inactives for one specific list, cross
+            -reference the emails returned here against
+            get_subscribers(list_id) (active only) or
+            get_subscriber_details(list_id, email) per candidate — there is
+            no endpoint that does this for you.
 
         Args:
             date_from (datetime): Start date
             date_to (datetime): End date
             full_info (bool): Whether to return full subscriber details
+            list_id: Not supported. Passing anything other than None raises
+                AcumbamailValidationError — see warning above.
 
         Returns:
             List[str] if full_info is False, List[InactiveSubscriber] if True
+                (InactiveSubscriber.reason_label maps the raw `reason` int to
+                a readable InactiveReason — see that enum's docstring for how
+                the codes were verified).
+
+        Raises:
+            AcumbamailValidationError: If list_id is passed (see warning above)
         """
+        if list_id is not None:
+            raise AcumbamailValidationError(
+                "get_inactive_subscribers() is global to the account: the API accepts "
+                "list_id, returns HTTP 200, and IGNORES it (verified against a "
+                "nonexistent list_id, which still returned the account's full total). "
+                "There is no server-side way to filter by list. Cross-reference the "
+                "returned emails against get_subscribers(list_id) or "
+                "get_subscriber_details(list_id, email) instead."
+            )
         data = {
             "date_from": date_from.strftime("%Y-%m-%d"),
             "date_to": date_to.strftime("%Y-%m-%d"),
@@ -1471,6 +1521,15 @@ class AcumbamailClient:
 
         Returns:
             List[SubscriberDetails]: Matching subscribers
+
+        .. warning::
+            Does NOT return "not verified" (unconfirmed double opt-in)
+            subscribers, even when searching by their exact email. Verified
+            2026-08-03: a real "not verified" subscriber in list A was
+            invisible here even though the same email had a confirmed
+            subscription in list B — only its list-B entry came back. To
+            check whether an email is "not verified" in a specific list, use
+            get_subscriber_details(list_id, email) instead.
         """
         response = self._call_api("searchSubscriber", {"subscriber": subscriber})
         return [SubscriberDetails.from_api(item) for item in response]

@@ -225,7 +225,11 @@ components:
       properties:
         reason:
           type: integer
-          description: Reason code for inactivity (e.g. 3 = hard bounce)
+          description: >
+            Reason code for inactivity. Verified 2026-08-03 by cross-referencing
+            805 real inactive subscribers against CSV exports: 1 = hard bounce,
+            3 = voluntary unsubscribe. (Not officially documented by Acumbamail;
+            this description previously had it backwards.)
           example: 3
         reason_date:
           type: string
@@ -1463,7 +1467,15 @@ paths:
 
         When `full_info=0` (default), returns a minimal list of emails.
         When `full_info=1`, returns full details including reason code and date.
-        Reason code 3 typically indicates a hard bounce.
+        Reason code 1 indicates a hard bounce; reason code 3 indicates a
+        voluntary unsubscribe (verified 2026-08-03 against real account data;
+        previously documented backwards here).
+
+        WARNING: this endpoint is global to the account, not scoped by list.
+        It accepts no list filter parameter — passing an unrelated `list_id`
+        in the request body is silently ignored by the server and still
+        returns the account's full total (verified against a nonexistent
+        list_id, which returned all inactive subscribers unfiltered).
       x-rate-limit: "10 requests/minute"
       requestBody:
         required: true
