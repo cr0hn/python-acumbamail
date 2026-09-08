@@ -550,4 +550,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 ## License
 
-[MIT](LICENSE) © Daniel Garcia (cr0hn)
+[MIT](LICENSE) © Daniel Alfocea (cr0hn)
