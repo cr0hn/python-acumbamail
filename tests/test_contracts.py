@@ -7,7 +7,7 @@ Los tests destructivos y los que requieren SMTP están marcados con skip.
 """
 import yaml
 import pytest
-import httpx
+import httpx2
 import jsonschema
 from pathlib import Path
 
@@ -52,7 +52,7 @@ def call_api(endpoint: str, data: dict | None = None) -> tuple[int, object]:
     body = {"auth_token": TOKEN, "response_type": "json"}
     if data:
         body.update(data)
-    r = httpx.post(f"{BASE_URL}/{endpoint}/", json=body, timeout=15)
+    r = httpx2.post(f"{BASE_URL}/{endpoint}/", json=body, timeout=15)
     try:
         return r.status_code, r.json()
     except Exception:

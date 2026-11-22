@@ -8,7 +8,7 @@ app = typer.Typer(help="Configuración de webhooks")
 @app.command("smtp-get")
 def smtp_webhook_get(
     token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN"),
-):
+) -> None:
     """Muestra la configuración del webhook SMTP."""
     try:
         client = get_client(token)
@@ -36,7 +36,7 @@ def smtp_webhook_config(
     click: bool = typer.Option(False, "--click/--no-click"),
     active: bool = typer.Option(True, "--active/--no-active"),
     token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN"),
-):
+) -> None:
     """Configura el webhook SMTP."""
     try:
         client = get_client(token)
@@ -56,7 +56,7 @@ def smtp_webhook_config(
 def list_webhook_get(
     list_id: int = typer.Option(..., "--list-id"),
     token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN"),
-):
+) -> None:
     """Muestra la configuración del webhook de una lista."""
     try:
         client = get_client(token)
@@ -86,7 +86,7 @@ def list_webhook_config(
     click: bool = typer.Option(False, "--click/--no-click"),
     active: bool = typer.Option(True, "--active/--no-active"),
     token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN"),
-):
+) -> None:
     """Configura el webhook de una lista."""
     try:
         client = get_client(token)

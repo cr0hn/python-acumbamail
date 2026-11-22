@@ -2,9 +2,14 @@
 Custom exceptions for the Acumbamail SDK.
 """
 
+from typing import Optional
+
+import httpx2
+
+
 class AcumbamailError(Exception):
     """Base exception for all Acumbamail errors."""
-    def __init__(self, message: str, response=None):
+    def __init__(self, message: str, response: Optional[httpx2.Response] = None):
         super().__init__(message)
         self.response = response
 

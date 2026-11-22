@@ -13,7 +13,7 @@ _PASS_OPT = typer.Option(None, "--password", envvar="ACUMBAMAIL_PASSWORD")
 
 
 @app.command("login")
-def login_automation():
+def login_automation() -> None:
     """Abre Chrome para autenticarte con Acumbamail y guarda la sesión."""
     import json
     import platform
@@ -22,7 +22,7 @@ def login_automation():
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
-        typer.echo("Error: playwright no instalado. Ejecuta: pip install playwright && playwright install chrome", err=True)
+        typer.echo("Error: playwright no instalado. Ejecuta: pip install 'acumbamail[browser]' && playwright install chrome", err=True)
         raise SystemExit(1)
 
     # Perfil dedicado para este CLI — no toca el Chrome del usuario
@@ -86,7 +86,7 @@ def login_automation():
 def list_automations(
     email: Optional[str] = _EMAIL_OPT,
     password: Optional[str] = _PASS_OPT,
-):
+) -> None:
     """Lista todas las automatizaciones."""
     try:
         client = get_automation_client(email, password)
@@ -104,7 +104,7 @@ def deploy_automation(
     file: str = typer.Argument(..., help="Ruta al fichero YAML"),
     email: Optional[str] = _EMAIL_OPT,
     password: Optional[str] = _PASS_OPT,
-):
+) -> None:
     """Despliega una automatización desde YAML (idempotente por nombre)."""
     try:
         data = load_yaml(file)
@@ -123,7 +123,7 @@ def export_automation(
     name: Optional[str] = typer.Option(None, "--name"),
     email: Optional[str] = _EMAIL_OPT,
     password: Optional[str] = _PASS_OPT,
-):
+) -> None:
     """Exporta una automatización existente a formato YAML."""
     try:
         client = get_automation_client(email, password)
@@ -151,7 +151,7 @@ def delete_automation(
     name: Optional[str] = typer.Option(None, "--name"),
     email: Optional[str] = _EMAIL_OPT,
     password: Optional[str] = _PASS_OPT,
-):
+) -> None:
     """Elimina una automatización por ID o nombre."""
     try:
         client = get_automation_client(email, password)

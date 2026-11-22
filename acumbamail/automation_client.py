@@ -1,17 +1,18 @@
 from __future__ import annotations
 import re
-from typing import Optional
-import httpx
+from typing import Any, Optional
+import httpx2
 from .automation_models import Automation, AutomationNode
+from .utils import ensure_dict
 
 BASE_URL = "https://acumbamail.com"
 
 
 class AutomationClient:
     def __init__(self, email: str, password: str):
-        self._email = email
-        self._password = password
-        self._client = httpx.Client(follow_redirects=True)
+        self._email: Optional[str] = email
+        self._password: Optional[str] = password
+        self._client = httpx2.Client(follow_redirects=True)
         self._csrf_token: Optional[str] = None
 
     @classmethod
@@ -21,7 +22,7 @@ class AutomationClient:
         instance._email = None
         instance._password = None
         instance._csrf_token = csrftoken
-        instance._client = httpx.Client(follow_redirects=False)
+        instance._client = httpx2.Client(follow_redirects=False)
         instance._client.cookies.set("sessionid", sessionid, domain="acumbamail.com", path="/")
         instance._client.cookies.set("csrftoken", csrftoken, domain="acumbamail.com", path="/")
         return instance
@@ -66,7 +67,7 @@ class AutomationClient:
         if not self._csrf_token:
             self._csrf_token = self._client.cookies.get("csrftoken", "")
 
-    def _headers(self) -> dict:
+    def _headers(self) -> dict[str, Any]:
         # Prefer current cookie value; include Origin+Referer for Django CSRF validation
         csrf = self._client.cookies.get("csrftoken") or self._csrf_token or ""
         return {
@@ -76,22 +77,22 @@ class AutomationClient:
             "Referer": f"{BASE_URL}/automation/workflow-list",
         }
 
-    def _get(self, path: str) -> httpx.Response:
+    def _get(self, path: str) -> httpx2.Response:
         resp = self._client.get(f"{BASE_URL}{path}")
         resp.raise_for_status()
         return resp
 
-    def _post(self, path: str, json: dict) -> httpx.Response:
+    def _post(self, path: str, json: dict[str, Any]) -> httpx2.Response:
         resp = self._client.post(f"{BASE_URL}{path}", json=json, headers=self._headers())
         resp.raise_for_status()
         return resp
 
-    def _patch(self, path: str, json: dict) -> httpx.Response:
+    def _patch(self, path: str, json: dict[str, Any]) -> httpx2.Response:
         resp = self._client.patch(f"{BASE_URL}{path}", json=json, headers=self._headers())
         resp.raise_for_status()
         return resp
 
-    def _put(self, path: str, json: dict) -> httpx.Response:
+    def _put(self, path: str, json: dict[str, Any]) -> httpx2.Response:
         resp = self._client.put(f"{BASE_URL}{path}", json=json, headers=self._headers())
         resp.raise_for_status()
         return resp
@@ -107,7 +108,7 @@ class AutomationClient:
         return Automation.from_full_api(self._get(f"/automation/api/workflow/{workflow_id}/").json())
 
     def create_workflow(self, name: str, description: Optional[str] = None) -> Automation:
-        payload: dict = {"name": name}
+        payload: dict[str, Any] = {"name": name}
         if description is not None:
             payload["description"] = description
         return Automation.from_full_api(self._post("/automation/api/workflow/", payload).json())
@@ -115,7 +116,7 @@ class AutomationClient:
     def update_workflow(self, workflow_id: int, *, name: Optional[str] = None, active: Optional[bool] = None) -> Automation:
         if name is None and active is None:
             raise ValueError("At least one of 'name' or 'active' must be provided")
-        payload: dict = {}
+        payload: dict[str, Any] = {}
         if name is not None:
             payload["name"] = name
         if active is not None:
@@ -134,8 +135,8 @@ class AutomationClient:
         return self.update_workflow(workflow_id, active=False)
 
     def create_node(self, node_type: str, workflow_id: int, source_id: str,
-                    siblings: Optional[list] = None, extra: Optional[dict] = None) -> dict:
-        payload: dict = {
+                    siblings: Optional[list[Any]] = None, extra: Optional[dict[str, Any]] = None) -> dict[str, Any]:
+        payload: dict[str, Any] = {
             "sourceId": source_id,
             "nodeType": node_type,
             "workflow": str(workflow_id),
@@ -143,10 +144,10 @@ class AutomationClient:
         }
         if extra:
             payload.update(extra)
-        return self._post(f"/automation/api/{node_type.lower()}/", payload).json()
+        return ensure_dict(self._post(f"/automation/api/{node_type.lower()}/", payload).json())
 
-    def update_node(self, node_type: str, node_id: str, payload: dict) -> dict:
-        return self._put(f"/automation/api/{node_type.lower()}/{node_id}/", payload).json()
+    def update_node(self, node_type: str, node_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+        return ensure_dict(self._put(f"/automation/api/{node_type.lower()}/{node_id}/", payload).json())
 
     def delete_node(self, node_type: str, node_id: str) -> None:
         self._delete(f"/automation/api/{node_type.lower()}/{node_id}/")

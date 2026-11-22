@@ -12,9 +12,9 @@ import warnings
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
-import httpx
+import httpx2
 
-from .utils import manage_api_response_id, parse_retry_after
+from .utils import ensure_dict, ensure_list, manage_api_response_id, parse_retry_after
 
 from .models import (
     CampaignTotalInformation,
@@ -52,7 +52,7 @@ class AcumbamailClient:
     management, subscriber operations, and detailed analytics and statistics.
     
     The client handles authentication, rate limiting, error processing, and response
-    parsing automatically. It uses httpx for HTTP requests and provides a clean,
+    parsing automatically. It uses httpx2 for HTTP requests and provides a clean,
     Pythonic interface to the Acumbamail API.
     
     Attributes:
@@ -157,7 +157,7 @@ class AcumbamailClient:
         self.sender_country = sender_country
         self.timeout = timeout
 
-    def _call_api(self, endpoint: str, data: Optional[Dict[str, Any]] = None, max_retries: int = 3) -> Dict[str, Any]:
+    def _call_api(self, endpoint: str, data: Optional[Dict[str, Any]] = None, max_retries: int = 3) -> Any:
         """
         Make a call to the Acumbamail API.
         
@@ -204,7 +204,7 @@ class AcumbamailClient:
 
         while retries < max_retries:
             try:
-                with httpx.Client(timeout=request_timeout) as client:
+                with httpx2.Client(timeout=request_timeout) as client:
                     response = client.post(url, json=data)
 
                 if response.status_code == 429:
@@ -221,7 +221,7 @@ class AcumbamailClient:
                 response.raise_for_status()
                 return response.json()
 
-            except httpx.HTTPStatusError as e:
+            except httpx2.HTTPStatusError as e:
                 if response.status_code == 429:
                     raise AcumbamailRateLimitError("Rate limit exceeded", response=response)
                 elif response.status_code == 400:
@@ -229,7 +229,7 @@ class AcumbamailClient:
                 else:
                     raise AcumbamailAPIError(f"API error: {str(e)}", response=response)
 
-            except httpx.RequestError as e:
+            except httpx2.RequestError as e:
                 raise AcumbamailError(f"Request failed: {str(e)}")
 
             except ValueError as e:
@@ -601,7 +601,7 @@ class AcumbamailClient:
             the mailing list. The data is updated after each campaign or
             subscriber operation.
         """
-        return self._call_api("getListStats", {"list_id": list_id})
+        return ensure_dict(self._call_api("getListStats", {"list_id": list_id}))
 
     def create_campaign(
         self,
@@ -611,7 +611,7 @@ class AcumbamailClient:
         list_ids: List[int],
         from_name: Optional[str] = None,
         from_email: Optional[str] = None,
-        scheduled_at: datetime = None,
+        scheduled_at: Optional[datetime] = None,
         tracking_enabled: bool = True,
         tracking_domain: Optional[str] = None,
         https: bool = True,
@@ -884,7 +884,7 @@ class AcumbamailClient:
             >>> print(f"Target lists: {info.get('lists', [])}")
             >>> print(f"Scheduled: {info.get('scheduled_at', 'Immediate')}")
         """
-        return self._call_api("getCampaignBasicInformation", {"campaign_id": campaign_id})
+        return ensure_dict(self._call_api("getCampaignBasicInformation", {"campaign_id": campaign_id}))
 
     def get_campaign_clicks(self, campaign_id: int) -> List[CampaignClick]:
         """
@@ -951,7 +951,7 @@ class AcumbamailClient:
         Returns:
             Dict[str, Any]: Campaign statistics grouped by ISP
         """
-        return self._call_api("getCampaignInformationByISP", {"campaign_id": campaign_id})
+        return ensure_dict(self._call_api("getCampaignInformationByISP", {"campaign_id": campaign_id}))
 
     def get_campaign_links(self, campaign_id: int) -> List[str]:
         """
@@ -964,7 +964,7 @@ class AcumbamailClient:
             List[str]: List of URLs used in the campaign
         """
         response = self._call_api("getCampaignLinks", {"campaign_id": campaign_id})
-        return response
+        return ensure_list(response)
 
     def get_campaign_openers(self, campaign_id: int) -> List[CampaignOpener]:
         """
@@ -1035,7 +1035,7 @@ class AcumbamailClient:
         Returns:
             Dict[str, int]: Number of opens per browser
         """
-        return self._call_api("getCampaignOpenersByBrowser", {"campaign_id": campaign_id})
+        return ensure_dict(self._call_api("getCampaignOpenersByBrowser", {"campaign_id": campaign_id}))
 
     def get_campaign_openers_by_os(self, campaign_id: int) -> Dict[str, int]:
         """
@@ -1047,7 +1047,7 @@ class AcumbamailClient:
         Returns:
             Dict[str, int]: Number of opens per operating system
         """
-        return self._call_api("getCampaignOpenersByOs", {"campaign_id": campaign_id})
+        return ensure_dict(self._call_api("getCampaignOpenersByOs", {"campaign_id": campaign_id}))
 
     def get_campaigns(self, complete_json: bool = False) -> List[Campaign]:
         """
@@ -1178,7 +1178,7 @@ class AcumbamailClient:
             "date_from": date_from.strftime("%Y-%m-%d"),
             "date_to": date_to.strftime("%Y-%m-%d")
         }
-        return self._call_api("getStatsByDate", data)
+        return ensure_dict(self._call_api("getStatsByDate", data))
 
     def get_templates(self) -> List[Template]:
         """
@@ -1289,7 +1289,7 @@ class AcumbamailClient:
         Returns:
             List[Dict[str, Any]]: List of custom fields and their configurations
         """
-        return self._call_api("getListFields", {"list_id": list_id})
+        return ensure_list(self._call_api("getListFields", {"list_id": list_id}))
 
     def get_list_segments(self, list_id: int) -> List[Dict[str, Any]]:
         """
@@ -1301,7 +1301,7 @@ class AcumbamailClient:
         Returns:
             List[Dict[str, Any]]: List of segments and their configurations
         """
-        return self._call_api("getListSegments", {"list_id": list_id})
+        return ensure_list(self._call_api("getListSegments", {"list_id": list_id}))
 
     def get_list_subs_stats(self, list_id: int, block_index: int = 0) -> Dict[str, int]:
         """
@@ -1314,7 +1314,7 @@ class AcumbamailClient:
         Returns:
             Dict[str, int]: Detailed subscriber statistics
         """
-        return self._call_api("getListSubsStats", {"list_id": list_id, "block_index": block_index})
+        return ensure_dict(self._call_api("getListSubsStats", {"list_id": list_id, "block_index": block_index}))
 
     def get_merge_fields(self, list_id: int) -> List[Dict[str, Any]]:
         """
@@ -1326,7 +1326,7 @@ class AcumbamailClient:
         Returns:
             List[Dict[str, Any]]: List of merge fields and their configurations
         """
-        return self._call_api("getMergeFields", {"list_id": list_id})
+        return ensure_list(self._call_api("getMergeFields", {"list_id": list_id}))
 
     def add_merge_tag(self, list_id: int, field_name: str, field_type: str) -> None:
         """
@@ -1421,7 +1421,7 @@ class AcumbamailClient:
         Returns:
             Dict[str, str]: Mapping of field_name to field_type
         """
-        return self._call_api("getFields", {"list_id": list_id})
+        return ensure_dict(self._call_api("getFields", {"list_id": list_id}))
 
     def get_forms(self, list_id: int) -> Dict[str, Any]:
         """
@@ -1433,7 +1433,7 @@ class AcumbamailClient:
         Returns:
             Dict[str, Any]: Forms associated with the list
         """
-        return self._call_api("getForms", {"list_id": list_id})
+        return ensure_dict(self._call_api("getForms", {"list_id": list_id}))
 
     def get_inactive_subscribers(
         self,
@@ -1441,7 +1441,7 @@ class AcumbamailClient:
         date_to: datetime,
         full_info: bool = False,
         list_id: Optional[int] = None,
-    ) -> List:
+    ) -> List[Any]:
         """
         Get inactive subscribers within a date range.
 
@@ -1552,7 +1552,7 @@ class AcumbamailClient:
         list_ids: List[int],
         from_name: Optional[str] = None,
         from_email: Optional[str] = None,
-        scheduled_at: datetime = None,
+        scheduled_at: Optional[datetime] = None,
         https: bool = True,
     ) -> Campaign:
         """
@@ -1626,7 +1626,7 @@ class AcumbamailClient:
         Returns:
             Dict[str, int]: Number of opens per country
         """
-        return self._call_api("getCampaignOpenersByCountries", {"campaign_id": campaign_id})
+        return ensure_dict(self._call_api("getCampaignOpenersByCountries", {"campaign_id": campaign_id}))
 
     def get_templates_by_name(self, template_name: str) -> List[Template]:
         """
@@ -1658,7 +1658,7 @@ class AcumbamailClient:
         Returns:
             List[Any]: API response for each message
         """
-        return self._call_api("send", {"messages": messages})
+        return ensure_list(self._call_api("send", {"messages": messages}))
 
     def send_certified_email(
         self,
@@ -1718,7 +1718,7 @@ class AcumbamailClient:
         Returns:
             Dict[str, Any]: Status information for the email
         """
-        return self._call_api("getEmailStatus", {"email_key": email_key})
+        return ensure_dict(self._call_api("getEmailStatus", {"email_key": email_key}))
 
     def get_smtp_webhook(self) -> SMTPWebhook:
         """

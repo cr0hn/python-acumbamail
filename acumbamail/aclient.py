@@ -13,9 +13,9 @@ import warnings
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
-import httpx
+import httpx2
 
-from .utils import manage_api_response_id, parse_retry_after
+from .utils import ensure_dict, ensure_list, manage_api_response_id, parse_retry_after
 
 from .models import (
     CampaignTotalInformation,
@@ -53,7 +53,7 @@ class AsyncAcumbamailClient:
     and management, subscriber operations, and detailed analytics and statistics.
     
     The client handles authentication, rate limiting, error processing, and response
-    parsing automatically. It uses httpx for HTTP requests and provides a clean,
+    parsing automatically. It uses httpx2 for HTTP requests and provides a clean,
     async/await interface to the Acumbamail API. This client is ideal for applications
     that need to handle multiple API calls concurrently or integrate with async
     frameworks like FastAPI, aiohttp, or asyncio-based applications.
@@ -69,7 +69,7 @@ class AsyncAcumbamailClient:
         sender_company (str, optional): Company name for list creation
         sender_country (str, optional): Country code for list creation
         timeout (float): Request timeout in seconds
-        _client (Optional[httpx.AsyncClient]): Internal HTTP client instance
+        _client (Optional[httpx2.AsyncClient]): Internal HTTP client instance
     
     Example:
         Using context manager (recommended):
@@ -182,9 +182,9 @@ class AsyncAcumbamailClient:
         self.sender_company = sender_company
         self.sender_country = sender_country
         self.timeout = timeout
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: Optional[httpx2.AsyncClient] = None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "AsyncAcumbamailClient":
         """
         Async context manager entry point.
         
@@ -199,10 +199,10 @@ class AsyncAcumbamailClient:
             >>> async with AsyncAcumbamailClient(auth_token="abc123") as client:
             ...     lists = await client.get_lists()
         """
-        self._client = httpx.AsyncClient(timeout=self.timeout)
+        self._client = httpx2.AsyncClient(timeout=self.timeout)
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
         """
         Async context manager exit point.
         
@@ -217,7 +217,7 @@ class AsyncAcumbamailClient:
         if self._client:
             await self._client.aclose()
 
-    async def _call_api(self, endpoint: str, data: Optional[Dict[str, Any]] = None, max_retries: int = 3) -> Dict[str, Any]:
+    async def _call_api(self, endpoint: str, data: Optional[Dict[str, Any]] = None, max_retries: int = 3) -> Any:
         """
         Make an async call to the Acumbamail API.
         
@@ -283,7 +283,7 @@ class AsyncAcumbamailClient:
                 response.raise_for_status()
                 return response.json()
 
-            except httpx.HTTPStatusError as e:
+            except httpx2.HTTPStatusError as e:
                 if response.status_code == 429:
                     raise AcumbamailRateLimitError("Rate limit exceeded", response=response)
                 elif response.status_code == 400:
@@ -291,7 +291,7 @@ class AsyncAcumbamailClient:
                 else:
                     raise AcumbamailAPIError(f"API error: {str(e)}", response=response)
 
-            except httpx.RequestError as e:
+            except httpx2.RequestError as e:
                 raise AcumbamailError(f"Request failed: {str(e)}")
 
             except ValueError as e:
@@ -299,7 +299,7 @@ class AsyncAcumbamailClient:
 
         raise AcumbamailRateLimitError(f"Rate limit exceeded after {max_retries} retries")
 
-    async def _ensure_client(self):
+    async def _ensure_client(self) -> None:
         """
         Ensure the HTTP client is initialized.
         
@@ -313,9 +313,9 @@ class AsyncAcumbamailClient:
             >>> lists = await client.get_lists()
         """
         if not self._client:
-            self._client = httpx.AsyncClient(timeout=self.timeout)
+            self._client = httpx2.AsyncClient(timeout=self.timeout)
 
-    async def close(self):
+    async def close(self) -> None:
         """
         Close the HTTP client and free resources.
         
@@ -698,7 +698,7 @@ class AsyncAcumbamailClient:
                 - campaigns_sent
         """
         await self._ensure_client()
-        return await self._call_api("getListStats", {"list_id": list_id})
+        return ensure_dict(await self._call_api("getListStats", {"list_id": list_id}))
 
     async def create_campaign(
         self,
@@ -708,7 +708,7 @@ class AsyncAcumbamailClient:
         list_ids: List[int],
         from_name: Optional[str] = None,
         from_email: Optional[str] = None,
-        scheduled_at: datetime = None,
+        scheduled_at: Optional[datetime] = None,
         tracking_enabled: bool = True,
         tracking_domain: Optional[str] = None,
         https: bool = True,
@@ -834,7 +834,7 @@ class AsyncAcumbamailClient:
             Dict[str, Any]: Basic campaign information
         """
         await self._ensure_client()
-        return await self._call_api("getCampaignBasicInformation", {"campaign_id": campaign_id})
+        return ensure_dict(await self._call_api("getCampaignBasicInformation", {"campaign_id": campaign_id}))
 
     async def get_campaign_clicks(self, campaign_id: int) -> List[CampaignClick]:
         """
@@ -861,7 +861,7 @@ class AsyncAcumbamailClient:
             Dict[str, Any]: Campaign statistics grouped by ISP
         """
         await self._ensure_client()
-        return await self._call_api("getCampaignInformationByISP", {"campaign_id": campaign_id})
+        return ensure_dict(await self._call_api("getCampaignInformationByISP", {"campaign_id": campaign_id}))
 
     async def get_campaign_links(self, campaign_id: int) -> List[str]:
         """
@@ -875,7 +875,7 @@ class AsyncAcumbamailClient:
         """
         await self._ensure_client()
         response = await self._call_api("getCampaignLinks", {"campaign_id": campaign_id})
-        return response
+        return ensure_list(response)
 
     async def get_campaign_openers(self, campaign_id: int) -> List[CampaignOpener]:
         """
@@ -902,7 +902,7 @@ class AsyncAcumbamailClient:
             Dict[str, int]: Number of opens per browser
         """
         await self._ensure_client()
-        return await self._call_api("getCampaignOpenersByBrowser", {"campaign_id": campaign_id})
+        return ensure_dict(await self._call_api("getCampaignOpenersByBrowser", {"campaign_id": campaign_id}))
 
     async def get_campaign_openers_by_os(self, campaign_id: int) -> Dict[str, int]:
         """
@@ -915,7 +915,7 @@ class AsyncAcumbamailClient:
             Dict[str, int]: Number of opens per operating system
         """
         await self._ensure_client()
-        return await self._call_api("getCampaignOpenersByOs", {"campaign_id": campaign_id})
+        return ensure_dict(await self._call_api("getCampaignOpenersByOs", {"campaign_id": campaign_id}))
 
     async def get_campaigns(self, complete_json: bool = False) -> List[Campaign]:
         """
@@ -999,7 +999,7 @@ class AsyncAcumbamailClient:
             "date_from": date_from.strftime("%Y-%m-%d"),
             "date_to": date_to.strftime("%Y-%m-%d")
         }
-        return await self._call_api("getStatsByDate", data)
+        return ensure_dict(await self._call_api("getStatsByDate", data))
 
     async def get_templates(self) -> List[Template]:
         """
@@ -1113,7 +1113,7 @@ class AsyncAcumbamailClient:
             List[Dict[str, Any]]: List of custom fields and their configurations
         """
         await self._ensure_client()
-        return await self._call_api("getListFields", {"list_id": list_id})
+        return ensure_list(await self._call_api("getListFields", {"list_id": list_id}))
 
     async def get_list_segments(self, list_id: int) -> List[Dict[str, Any]]:
         """
@@ -1126,7 +1126,7 @@ class AsyncAcumbamailClient:
             List[Dict[str, Any]]: List of segments and their configurations
         """
         await self._ensure_client()
-        return await self._call_api("getListSegments", {"list_id": list_id})
+        return ensure_list(await self._call_api("getListSegments", {"list_id": list_id}))
 
     async def get_list_subs_stats(self, list_id: int, block_index: int = 0) -> Dict[str, int]:
         """
@@ -1140,7 +1140,7 @@ class AsyncAcumbamailClient:
             Dict[str, int]: Detailed subscriber statistics
         """
         await self._ensure_client()
-        return await self._call_api("getListSubsStats", {"list_id": list_id, "block_index": block_index})
+        return ensure_dict(await self._call_api("getListSubsStats", {"list_id": list_id, "block_index": block_index}))
 
     async def get_merge_fields(self, list_id: int) -> List[Dict[str, Any]]:
         """
@@ -1153,7 +1153,7 @@ class AsyncAcumbamailClient:
             List[Dict[str, Any]]: List of merge fields and their configurations
         """
         await self._ensure_client()
-        return await self._call_api("getMergeFields", {"list_id": list_id})
+        return ensure_list(await self._call_api("getMergeFields", {"list_id": list_id}))
 
     async def add_merge_tag(self, list_id: int, field_name: str, field_type: str) -> None:
         """Add a merge tag (custom field) to a mailing list."""
@@ -1211,12 +1211,12 @@ class AsyncAcumbamailClient:
     async def get_fields(self, list_id: int) -> Dict[str, str]:
         """Get the fields defined for a mailing list."""
         await self._ensure_client()
-        return await self._call_api("getFields", {"list_id": list_id})
+        return ensure_dict(await self._call_api("getFields", {"list_id": list_id}))
 
     async def get_forms(self, list_id: int) -> Dict[str, Any]:
         """Get the subscription forms for a mailing list."""
         await self._ensure_client()
-        return await self._call_api("getForms", {"list_id": list_id})
+        return ensure_dict(await self._call_api("getForms", {"list_id": list_id}))
 
     async def get_inactive_subscribers(
         self,
@@ -1224,7 +1224,7 @@ class AsyncAcumbamailClient:
         date_to: datetime,
         full_info: bool = False,
         list_id: Optional[int] = None,
-    ) -> List:
+    ) -> List[Any]:
         """
         Get inactive subscribers within a date range.
 
@@ -1299,7 +1299,7 @@ class AsyncAcumbamailClient:
         list_ids: List[int],
         from_name: Optional[str] = None,
         from_email: Optional[str] = None,
-        scheduled_at: datetime = None,
+        scheduled_at: Optional[datetime] = None,
         https: bool = True,
     ) -> Campaign:
         """Create and send a campaign based on a template."""
@@ -1344,7 +1344,7 @@ class AsyncAcumbamailClient:
     async def get_campaign_openers_by_countries(self, campaign_id: int) -> Dict[str, int]:
         """Get campaign openers grouped by country."""
         await self._ensure_client()
-        return await self._call_api("getCampaignOpenersByCountries", {"campaign_id": campaign_id})
+        return ensure_dict(await self._call_api("getCampaignOpenersByCountries", {"campaign_id": campaign_id}))
 
     async def get_templates_by_name(self, template_name: str) -> List[Template]:
         """
@@ -1370,7 +1370,7 @@ class AsyncAcumbamailClient:
     async def send_emails(self, messages: List[Dict[str, Any]]) -> List[Any]:
         """Send multiple emails via SMTP in batch."""
         await self._ensure_client()
-        return await self._call_api("send", {"messages": messages})
+        return ensure_list(await self._call_api("send", {"messages": messages}))
 
     async def send_certified_email(
         self,
@@ -1409,7 +1409,7 @@ class AsyncAcumbamailClient:
     async def get_email_status(self, email_key: str) -> Dict[str, Any]:
         """Get the delivery status of a sent email."""
         await self._ensure_client()
-        return await self._call_api("getEmailStatus", {"email_key": email_key})
+        return ensure_dict(await self._call_api("getEmailStatus", {"email_key": email_key}))
 
     async def get_smtp_webhook(self) -> SMTPWebhook:
         """Get the current SMTP webhook configuration."""

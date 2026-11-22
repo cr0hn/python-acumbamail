@@ -80,7 +80,7 @@ class Subscriber:
     email: str
     list_id: int
     is_active: bool = True
-    fields: Dict[str, Any] = None
+    fields: Optional[Dict[str, Any]] = None
     subscribed_at: Optional[datetime] = None
 
     @classmethod
@@ -126,14 +126,14 @@ class Campaign:
     name: str
     subject: str
     content: str
-    from_name: str
-    from_email: str
+    from_name: Optional[str]
+    from_email: Optional[str]
     list_ids: List[int]
     scheduled_at: Optional[datetime] = None
     sent_at: Optional[datetime] = None
     tracking_enabled: bool = True
     pre_header: Optional[str] = None
-    stats: Dict[str, Any] = None
+    stats: Optional[Dict[str, Any]] = None
     tracking_domain: Optional[str] = None
     https: Optional[bool] = True
 
@@ -523,7 +523,7 @@ class SubscriberDetails:
     status: str
     create_date: Optional[datetime] = None
     list_id: Optional[int] = None
-    fields: Dict[str, Any] = None
+    fields: Optional[Dict[str, Any]] = None
 
     @classmethod
     def from_api(cls, data: Dict[str, Any]) -> 'SubscriberDetails':
@@ -722,7 +722,7 @@ class BatchSubscriberResult:
         return cls(email=key, subscriber_id=None, status="failed", error=value)
 
 
-class BatchAddSubscribersResult(list):
+class BatchAddSubscribersResult(list[Any]):
     """List of `BatchSubscriberResult` with an additive added/already_existed/failed summary.
 
     Behaves exactly like the plain list `batch_add_subscribers()` used to

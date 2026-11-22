@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import typer
 
@@ -47,7 +47,7 @@ def list_subscribers(
         None, "--date-to", help="YYYY-MM-DD. Solo aplica con --status inactive. Por defecto: hoy."
     ),
     token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN"),
-):
+) -> None:
     """Lista suscriptores activos de una lista, o inactivos de toda la cuenta.
 
     lists list reporta un subscribers_count que SI incluye bajas y bounces, asi que
@@ -72,9 +72,9 @@ def list_subscribers(
             raise SystemExit(1)
 
         client = get_client(token)
-        out = []
+        out: list[dict[str, Any]] = []
 
-        if status == "active":
+        if status == "active" and list_id is not None:
             subs = client.get_subscribers(list_id)
             out.extend(
                 {"email": s.email, "list_id": s.list_id, "is_active": s.is_active, "fields": s.fields}
@@ -113,7 +113,7 @@ def add_subscriber(
     email: str = typer.Option(..., "--email"),
     fields: Optional[str] = typer.Option(None, "--fields", help="JSON string con campos extra"),
     token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN"),
-):
+) -> None:
     """Añade un suscriptor a una lista."""
     try:
         parsed_fields = json.loads(fields) if fields else None
@@ -134,7 +134,7 @@ def delete_subscriber(
     list_id: int = typer.Option(..., "--list-id"),
     email: str = typer.Option(..., "--email"),
     token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN"),
-):
+) -> None:
     """Borra un suscriptor de una lista."""
     try:
         client = get_client(token)
@@ -150,7 +150,7 @@ def delete_subscriber(
 def search_subscriber(
     query: str = typer.Option(..., "--query"),
     token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN"),
-):
+) -> None:
     """Busca un suscriptor en todas las listas.
 
     AVISO: no devuelve suscriptores "not verified" (doble opt-in sin
@@ -176,7 +176,7 @@ def unsubscribe_subscriber(
     list_id: int = typer.Option(..., "--list-id"),
     email: str = typer.Option(..., "--email"),
     token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN"),
-):
+) -> None:
     """Da de baja a un suscriptor de una lista."""
     try:
         client = get_client(token)
@@ -194,7 +194,7 @@ def batch_add_subscribers(
     file: Path = typer.Option(..., "--file", exists=True, readable=True),
     update: bool = typer.Option(False, "--update/--no-update", help="Actualizar si ya existe"),
     token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN"),
-):
+) -> None:
     """Importa suscriptores desde un fichero JSON."""
     try:
         subscribers_data = json.loads(file.read_text())
@@ -228,7 +228,7 @@ def check_subscribers(
         help="Fichero JSON con un array de emails, p.ej. [\"a@x.com\", \"b@x.com\"]",
     ),
     token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN"),
-):
+) -> None:
     """Comprueba el estado real de uno o varios emails en una lista, uno a uno.
 
     Es la unica forma de ver suscriptores "not verified" (doble opt-in sin

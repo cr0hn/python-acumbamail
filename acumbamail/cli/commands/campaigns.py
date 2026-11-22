@@ -18,7 +18,7 @@ def create_campaign(
     from_name: Optional[str] = typer.Option(None, "--from-name", help="Nombre del remitente"),
     scheduled_at: Optional[str] = typer.Option(None, "--scheduled-at", help="Programar envío: 'YYYY-MM-DD HH:MM'"),
     token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN"),
-):
+) -> None:
     """Crea y envía una campaña de email.
 
     El contenido HTML debe incluir el tag *|UNSUBSCRIBE_URL|* para el enlace de baja.
@@ -43,7 +43,7 @@ def create_campaign(
                 typer.echo(f"Error: no se encontró el fichero '{html_file}'", err=True)
                 raise SystemExit(1)
         else:
-            content = html
+            content = html or ""
 
         scheduled = None
         if scheduled_at:
@@ -98,7 +98,7 @@ def create_campaign(
 @app.command("list")
 def list_campaigns(
     token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN"),
-):
+) -> None:
     """Lista todas las campañas."""
     try:
         client = get_client(token)
@@ -123,7 +123,7 @@ def list_campaigns(
 def campaign_info(
     campaign_id: int = typer.Option(..., "--campaign-id"),
     token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN"),
-):
+) -> None:
     """Información básica de una campaña."""
     try:
         client = get_client(token)
@@ -139,7 +139,7 @@ def campaign_info(
 def campaign_stats(
     campaign_id: int = typer.Option(..., "--campaign-id"),
     token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN"),
-):
+) -> None:
     """Estadísticas totales de una campaña."""
     try:
         client = get_client(token)

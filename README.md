@@ -88,6 +88,15 @@ uv add acumbamail
 pipx install acumbamail
 ```
 
+The base install is light: it uses [httpx2](https://pypi.org/project/httpx2/) as HTTP client and ships
+`py.typed` (checked with `mypy --strict`). Browser automation (the `automations login` flow with
+email and password) needs the optional extra, which pulls in Playwright and undetected-chromedriver:
+
+```bash
+pip install 'acumbamail[browser]' && playwright install chrome
+```
+
+
 Requires Python 3.13+.
 
 ## Getting Started

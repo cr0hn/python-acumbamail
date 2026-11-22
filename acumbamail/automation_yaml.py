@@ -1,6 +1,8 @@
 from __future__ import annotations
-from typing import Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING
 import yaml
+
+from .utils import ensure_dict
 
 if TYPE_CHECKING:
     from .automation_client import AutomationClient
@@ -22,14 +24,14 @@ _INV_TRIGGER_EVENT_MAP: dict[int, str] = {v: k for k, v in _TRIGGER_EVENT_MAP.it
 _INV_WAIT_UNIT_MAP: dict[int, str] = {v: k for k, v in _WAIT_UNIT_MAP.items()}
 
 
-def load_yaml(path: str) -> dict:
+def load_yaml(path: str) -> dict[str, Any]:
     with open(path) as f:
         data = yaml.safe_load(f)
     validate_yaml(data)
-    return data
+    return ensure_dict(data)
 
 
-def validate_yaml(data: dict) -> None:
+def validate_yaml(data: dict[str, Any]) -> None:
     if not data.get("name"):
         raise ValueError("YAML missing required field: name")
     trigger = data.get("trigger") or {}
@@ -40,28 +42,34 @@ def validate_yaml(data: dict) -> None:
         raise ValueError(f"Invalid trigger.event: {event!r}. Valid values: {list(_TRIGGER_EVENT_MAP)}")
 
 
-def deploy_yaml(data: dict, client: "AutomationClient") -> dict:
+def _entry(workflow: "Automation") -> "AutomationNode":
+    if workflow.entry_point is None:
+        raise ValueError(f"Workflow {workflow.id} has no entry point")
+    return workflow.entry_point
+
+
+def deploy_yaml(data: dict[str, Any], client: "AutomationClient") -> dict[str, Any]:
     name = data["name"]
     description = data.get("description")
     existing = next((w for w in client.list_workflows() if w.name == name), None)
 
     if existing is None:
         workflow = client.create_workflow(name, description)
-        trigger_payload = _update_trigger(workflow.entry_point, data.get("trigger", {}), client)
-        _build_tree(workflow.id, workflow.entry_point.id, data.get("steps", []), client,
+        trigger_payload = _update_trigger(_entry(workflow), data.get("trigger", {}), client)
+        _build_tree(workflow.id, _entry(workflow).id, data.get("steps", []), client,
                     parent_data=trigger_payload)
         return {"workflow_id": workflow.id, "action": "created", "active": workflow.active}
     else:
         full = client.get_workflow(existing.id)
         _delete_all_nodes_except_trigger(full, client)
-        trigger_payload = _update_trigger(full.entry_point, data.get("trigger", {}), client)
-        _build_tree(existing.id, full.entry_point.id, data.get("steps", []), client,
+        trigger_payload = _update_trigger(_entry(full), data.get("trigger", {}), client)
+        _build_tree(existing.id, _entry(full).id, data.get("steps", []), client,
                     parent_data=trigger_payload)
         return {"workflow_id": existing.id, "action": "updated", "active": existing.active}
 
 
-def _update_trigger(trigger_node: "AutomationNode", trigger_data: dict,
-                    client: "AutomationClient") -> dict:
+def _update_trigger(trigger_node: "AutomationNode", trigger_data: dict[str, Any],
+                    client: "AutomationClient") -> dict[str, Any]:
     """Update trigger settings. Returns the payload dict for parent-tracking in _build_tree."""
     reason_index = _TRIGGER_EVENT_MAP.get(trigger_data.get("event", "subscriber_added"), 0)
     payload = {
@@ -90,8 +98,8 @@ def _delete_all_nodes_except_trigger(workflow: "Automation", client: "Automation
         _delete_subtree(workflow.entry_point)
 
 
-def _build_tree(workflow_id: int, source_id: str, steps: list, client: "AutomationClient",
-               parent_data: Optional[dict] = None) -> str:
+def _build_tree(workflow_id: int, source_id: str, steps: list[Any], client: "AutomationClient",
+               parent_data: Optional[dict[str, Any]] = None) -> str:
     """Build node tree. parent_data is the raw dict of the current parent node."""
     last_id = source_id
     last_data = parent_data  # track parent node data for sibling linking
@@ -111,8 +119,8 @@ def _build_tree(workflow_id: int, source_id: str, steps: list, client: "Automati
     return str(last_id)
 
 
-def _deploy_step(workflow_id: int, source_id: str, step: dict,
-                 client: "AutomationClient") -> tuple[str, dict]:
+def _deploy_step(workflow_id: int, source_id: str, step: dict[str, Any],
+                 client: "AutomationClient") -> tuple[str, dict[str, Any]]:
     """Deploy a single step. Returns (node_id, node_data) for parent-sibling linking."""
     stype = step["type"]
 
@@ -195,10 +203,10 @@ def _deploy_step(workflow_id: int, source_id: str, step: dict,
         raise ValueError(f"Unknown step type: {stype!r}")
 
 
-def export_yaml(workflow: "Automation") -> dict:
+def export_yaml(workflow: "Automation") -> dict[str, Any]:
     if workflow.entry_point is None:
         raise ValueError(f"Workflow '{workflow.name}' has no entry_point — cannot export")
-    result: dict = {"name": workflow.name}
+    result: dict[str, Any] = {"name": workflow.name}
     if workflow.description:
         result["description"] = workflow.description
 
@@ -218,7 +226,7 @@ def export_yaml(workflow: "Automation") -> dict:
 _BRANCHING_TYPES = {"Fork", "Condition", "Until"}
 
 
-def _nodes_to_steps(nodes: list) -> list:
+def _nodes_to_steps(nodes: list[Any]) -> list[Any]:
     """Convert a list of nodes to YAML steps, following linear chains through siblings."""
     steps = []
     for node in nodes:
@@ -232,7 +240,7 @@ def _nodes_to_steps(nodes: list) -> list:
     return steps
 
 
-def _node_to_step(node: "AutomationNode") -> Optional[dict]:
+def _node_to_step(node: "AutomationNode") -> Optional[dict[str, Any]]:
     unit_inv = _INV_WAIT_UNIT_MAP
     nt = node.node_type
 
@@ -240,7 +248,7 @@ def _node_to_step(node: "AutomationNode") -> Optional[dict]:
         return {"type": "delay", "wait": node.extra.get("wait_time", 1),
                 "unit": unit_inv.get(node.extra.get("wait_unit", 2), "days")}
     elif nt == "SendTemplate":
-        step: dict = {"type": "email_template", "subject": node.extra.get("subject", ""),
+        step: dict[str, Any] = {"type": "email_template", "subject": node.extra.get("subject", ""),
                       "from_email": node.extra.get("from_email", ""), "from_name": node.extra.get("from_name", ""),
                       "template_id": node.extra.get("template")}
         if node.extra.get("preheader"):

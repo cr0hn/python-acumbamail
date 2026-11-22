@@ -16,7 +16,7 @@ def _skill_source() -> Path:
 
 def install_skills(
     global_install: bool = typer.Option(False, "--global", "-g", help="Install globally (~/.claude/skills/)"),
-):
+) -> None:
     """Install Acumbamail CLI skills for Claude Code."""
     if global_install:
         target_dir = Path.home() / ".claude" / "skills" / SKILL_NAME

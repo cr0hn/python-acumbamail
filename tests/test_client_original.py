@@ -2,7 +2,7 @@
 import json
 import pytest
 from datetime import datetime
-from pytest_httpx import HTTPXMock
+from tests.conftest import HTTPXMock
 
 from acumbamail import AcumbamailClient
 from acumbamail.exceptions import AcumbamailValidationError

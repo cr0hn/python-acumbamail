@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] — 2026-11-22
+
+### Changed
+- HTTP client switched from `httpx` to `httpx2` (sync and async clients kept).
+- Playwright and undetected-chromedriver moved to the optional extra `acumbamail[browser]`;
+  `import acumbamail` never loads them.
+- Ships `py.typed`; the package passes `mypy --strict`. `Campaign.from_name/from_email`,
+  `Subscriber.fields` and `Campaign.stats` are now `Optional`; `scheduled_at` is `Optional[datetime]`;
+  methods whose response must be a JSON object/array raise `AcumbamailError` on another shape.
+
+### Added
+- `tests/test_pulse_surface.py`: add/unsubscribe/delete subscriber, create campaign, campaign stats
+  and transactional send, sync and async, with HTTP mocked.
+
 ## [0.4.0] — 2026-08-03
 
 ### Fixed

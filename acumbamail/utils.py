@@ -4,6 +4,8 @@ Utility functions for the Acumbamail SDK.
 
 from typing import Any, Optional
 
+from .exceptions import AcumbamailError
+
 
 def _as_int(value: Any) -> Optional[int]:
     """Return int(value) if castable, else None (never raises)."""
@@ -32,7 +34,7 @@ def parse_retry_after(response: Any, default_wait: float) -> float:
     return default_wait
 
 
-def manage_api_response_id(response) -> int:
+def manage_api_response_id(response: object) -> int:
     """
     Process and normalize the API response for ID extraction.
 
@@ -94,3 +96,17 @@ def manage_api_response_id(response) -> int:
         )
 
     raise ValueError(f"Invalid response type: {type(response)}")
+
+
+def ensure_dict(value: object) -> dict[str, Any]:
+    """Return ``value`` if the API sent a JSON object, else raise (the shape is untrusted)."""
+    if not isinstance(value, dict):
+        raise AcumbamailError(f"Expected a JSON object from the API, got {type(value).__name__}")
+    return value
+
+
+def ensure_list(value: object) -> list[Any]:
+    """Return ``value`` if the API sent a JSON array, else raise (the shape is untrusted)."""
+    if not isinstance(value, list):
+        raise AcumbamailError(f"Expected a JSON array from the API, got {type(value).__name__}")
+    return value

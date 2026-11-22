@@ -5,11 +5,11 @@ cliente HTTP era mas corto que esa espera, asi que el reintento moria con
 "The read operation timed out". El fix respeta `Retry-After` si viene, y
 sube el timeout de la peticion reintentada por encima de la espera anunciada.
 
-Se usan clientes httpx falsos (sin red real) para poder verificar tanto el
+Se usan clientes httpx2 falsos (sin red real) para poder verificar tanto el
 tiempo de espera usado como el timeout con el que se construye/llama al
-cliente HTTP en cada intento — pytest-httpx no expone ese dato.
+cliente HTTP en cada intento — pytest-httpx2 no expone ese dato.
 """
-import httpx
+import httpx2
 import pytest
 
 from acumbamail import AcumbamailClient, AsyncAcumbamailClient
@@ -29,11 +29,11 @@ class _FakeResponse:
 
     def raise_for_status(self):
         if self.status_code >= 400:
-            raise httpx.HTTPStatusError("error", request=None, response=self)
+            raise httpx2.HTTPStatusError("error", request=None, response=self)
 
 
 class _FakeSyncClient:
-    """Sustituto de httpx.Client: registra el timeout con el que se
+    """Sustituto de httpx2.Client: registra el timeout con el que se
     construyo y sirve una secuencia de respuestas guionizada."""
     responses = []
     timeouts_used = []
@@ -52,7 +52,7 @@ class _FakeSyncClient:
 
 
 class _FakeAsyncClient:
-    """Sustituto de httpx.AsyncClient: registra el timeout por-peticion."""
+    """Sustituto de httpx2.AsyncClient: registra el timeout por-peticion."""
     responses = []
     timeouts_used = []
 
@@ -78,11 +78,11 @@ def _reset_fakes():
 
 class TestSyncRateLimitBackoffTimeout:
     def test_retry_after_header_is_respected_and_timeout_raised_above_wait(self, monkeypatch):
-        # Timeout base deliberadamente corto (como el default de httpx antes
+        # Timeout base deliberadamente corto (como el default de httpx2 antes
         # del fix), mas corto que la espera real que anuncia el 429.
         client = AcumbamailClient(auth_token=TOKEN, timeout=5.0)
 
-        monkeypatch.setattr("acumbamail.client.httpx.Client", _FakeSyncClient)
+        monkeypatch.setattr("acumbamail.client.httpx2.Client", _FakeSyncClient)
         sleeps = []
         monkeypatch.setattr("acumbamail.client.time.sleep", lambda s: sleeps.append(s))
 
@@ -104,7 +104,7 @@ class TestSyncRateLimitBackoffTimeout:
 
     def test_falls_back_to_default_schedule_without_retry_after_header(self, monkeypatch):
         client = AcumbamailClient(auth_token=TOKEN, timeout=5.0)
-        monkeypatch.setattr("acumbamail.client.httpx.Client", _FakeSyncClient)
+        monkeypatch.setattr("acumbamail.client.httpx2.Client", _FakeSyncClient)
         sleeps = []
         monkeypatch.setattr("acumbamail.client.time.sleep", lambda s: sleeps.append(s))
 
@@ -121,7 +121,7 @@ class TestSyncRateLimitBackoffTimeout:
 class TestAsyncRateLimitBackoffTimeout:
     async def test_retry_after_header_is_respected_and_timeout_raised_above_wait(self, monkeypatch):
         client = AsyncAcumbamailClient(auth_token=TOKEN, timeout=5.0)
-        monkeypatch.setattr("acumbamail.aclient.httpx.AsyncClient", _FakeAsyncClient)
+        monkeypatch.setattr("acumbamail.aclient.httpx2.AsyncClient", _FakeAsyncClient)
         await client._ensure_client()
 
         sleeps = []

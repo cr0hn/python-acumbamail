@@ -3,7 +3,7 @@ import json
 import pytest
 import pytest_asyncio
 from datetime import datetime
-from pytest_httpx import HTTPXMock
+from tests.conftest import HTTPXMock
 
 from acumbamail import AsyncAcumbamailClient
 from acumbamail.exceptions import AcumbamailValidationError
@@ -25,7 +25,7 @@ BASE = "https://acumbamail.com/api/1"
 
 
 @pytest_asyncio.fixture
-async def async_client():
+async def async_client(httpx_mock):
     async with AsyncAcumbamailClient(
         auth_token=TOKEN,
         default_sender_name="Sender",

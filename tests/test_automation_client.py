@@ -1,5 +1,5 @@
 import pytest
-from pytest_httpx import HTTPXMock
+from tests.conftest import HTTPXMock
 from acumbamail.automation_client import AutomationClient
 
 BASE = "https://acumbamail.com"
@@ -7,7 +7,7 @@ LOGIN_HTML = '<form><input name="csrfmiddlewaretoken" value="csrf_token_123"></f
 
 
 @pytest.fixture
-def client():
+def client(httpx_mock):
     return AutomationClient("user@test.com", "password123")
 
 

@@ -1,12 +1,16 @@
 from __future__ import annotations
 import json
 import os
+from typing import TYPE_CHECKING
 import sys
 from typing import Any
 
 import typer
 
 from acumbamail import AcumbamailClient
+
+if TYPE_CHECKING:
+    from acumbamail.automation_client import AutomationClient
 
 
 def get_client(token: str | None) -> AcumbamailClient:

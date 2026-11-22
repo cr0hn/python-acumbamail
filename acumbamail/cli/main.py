@@ -23,6 +23,6 @@ app.command("install-skills")(install_skills)
 @app.callback()
 def main(
     token: Optional[str] = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN", help="API token"),
-):
+) -> None:
     if token:
         os.environ["ACUMBAMAIL_TOKEN"] = token

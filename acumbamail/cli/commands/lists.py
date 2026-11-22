@@ -6,7 +6,7 @@ app = typer.Typer(help="Gestión de listas de suscriptores")
 
 
 @app.command("list")
-def list_lists(token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN")):
+def list_lists(token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN")) -> None:
     """Lista todas las listas disponibles."""
     try:
         client = get_client(token)
@@ -34,7 +34,7 @@ def create_list(
     sender_email: str = typer.Option(..., "--sender-email"),
     description: str = typer.Option("", "--description"),
     token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN"),
-):
+) -> None:
     """Crea una nueva lista."""
     try:
         client = get_client(token)
@@ -51,7 +51,7 @@ def create_list(
 def delete_list(
     list_id: int = typer.Option(..., "--list-id"),
     token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN"),
-):
+) -> None:
     """Borra una lista."""
     try:
         client = get_client(token)
@@ -67,7 +67,7 @@ def delete_list(
 def list_stats(
     list_id: int = typer.Option(..., "--list-id"),
     token: str = typer.Option(None, "--token", envvar="ACUMBAMAIL_TOKEN"),
-):
+) -> None:
     """Estadísticas de una lista."""
     try:
         client = get_client(token)

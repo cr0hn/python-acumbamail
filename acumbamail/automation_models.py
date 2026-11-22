@@ -13,7 +13,7 @@ class AutomationNode:
     extra: Dict[str, Any]
 
     @classmethod
-    def from_api(cls, data: dict) -> AutomationNode:
+    def from_api(cls, data: dict[str, Any]) -> AutomationNode:
         siblings = [cls.from_api(s) for s in data.get("siblings", [])]
         skip = {"id", "nodeType", "workflow", "parent_id", "siblings"}
         extra = {k: v for k, v in data.items() if k not in skip}
@@ -37,7 +37,7 @@ class Automation:
     entry_point: Optional[AutomationNode] = None
 
     @classmethod
-    def from_basic_api(cls, data: dict) -> Automation:
+    def from_basic_api(cls, data: dict[str, Any]) -> Automation:
         return cls(
             id=int(data["id"]),
             name=data["name"],
@@ -47,7 +47,7 @@ class Automation:
         )
 
     @classmethod
-    def from_full_api(cls, data: dict) -> Automation:
+    def from_full_api(cls, data: dict[str, Any]) -> Automation:
         entry_point = None
         if data.get("entry_point"):
             entry_point = AutomationNode.from_api(data["entry_point"])
